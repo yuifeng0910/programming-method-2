@@ -37,10 +37,6 @@ font_small = pygame.font.SysFont("monospace", 18, bold=True)
 font_mid = pygame.font.SysFont("arial", 28, bold=True)
 font_big = pygame.font.SysFont("arial", 44, bold=True)
 
-# =========================
-# FILE PATHS
-# =========================
-# ẢNH (anh sửa theo máy anh nếu cần)
 PLAYER_IMG = r"C:\Users\HAI\Downloads\pl2.png"
 ENEMY_IMG = r"c:\Users\HAI\Downloads\planebl.png"
 BOSS_IMG = r"C:\Users\HAI\Downloads\z7380850319506_eb5087d808de142e07350324449a2695.jpg"
