@@ -37,6 +37,10 @@ font_small = pygame.font.SysFont("monospace", 18, bold=True)
 font_mid = pygame.font.SysFont("arial", 28, bold=True)
 font_big = pygame.font.SysFont("arial", 44, bold=True)
 
+# =========================
+# FILE PATHS
+# =========================
+# ẢNH (anh sửa theo máy anh nếu cần)
 PLAYER_IMG = r"C:\Users\HAI\Downloads\pl2.png"
 ENEMY_IMG = r"c:\Users\HAI\Downloads\planebl.png"
 BOSS_IMG = r"C:\Users\HAI\Downloads\z7380850319506_eb5087d808de142e07350324449a2695.jpg"
@@ -596,11 +600,11 @@ class Game:
         self.bg.draw()
 
         if self.state == "START":
-            draw_text("NHIỆM VỤ CẤP CAO", font_big, RED, W // 2, 90, center=True)
-            draw_text("Giúp Phạm Tuân bay lên vũ trụ an toàn", font_mid, CYAN, W // 2, 160, center=True)
+            draw_text("HIGH-LEVEL MISSION", font_big, RED, W // 2, 90, center=True)
+            draw_text("FLY TO SPACE", font_mid, CYAN, W // 2, 160, center=True)
             self.player.draw()
-            draw_text("NHẤN [ SPACE ] ĐỂ CẤT CÁNH", font_mid, YELLOW, W // 2, H - 120, center=True)
-            draw_text("TEST SOUND: 1 / 2 / 3 / 4 / 5", font_small, WHITE, W // 2, H - 80, center=True)
+            draw_text(" [ SPACE ] TO TAKE OFF", font_mid, YELLOW, W // 2, H - 120, center=True)
+        
             pygame.display.flip()
             return
 
@@ -609,11 +613,11 @@ class Game:
             pygame.draw.rect(screen, (200, 205, 215), (tx - 200, ty - 40, 400, 50))
             pygame.draw.rect(screen, WHITE, (tx - 200, ty - 40, 400, 50), 2)
             pygame.draw.rect(screen, (60, 70, 88), (tx - 50, ty + 10, 100, 50))
-            draw_text("TRẠM VŨ TRỤ QUỐC TẾ (ISS)", font_small, BLACK, tx, ty - 15, center=True)
+            draw_text("ISS INTERNATIONAL SPACE STATION ", font_small, BLACK, tx, ty - 15, center=True)
             if self.win_anim_y >= H // 3:
-                draw_text("BẠN ĐÃ CHIẾN THẮNG!", font_big, YELLOW, W // 2, H // 2 + 100, center=True)
-                draw_text("PHẠM TUÂN ĐÃ CẬP BẾN AN TOÀN", font_mid, WHITE, W // 2, H // 2 + 160, center=True)
-                draw_text("NHẤN [ SPACE ] ĐỂ CHƠI LẠI", font_small, (150, 150, 150), W // 2, H - 50, center=True)
+                draw_text("YOU WON", font_big, YELLOW, W // 2, H // 2 + 100, center=True)
+                draw_text("MISSION COMPLETE", font_mid, WHITE, W // 2, H // 2 + 160, center=True)
+                draw_text(" [ SPACE ] TO RETRY  ", font_small, (150, 150, 150), W // 2, H - 50, center=True)
 
         self.boss.draw()
 
