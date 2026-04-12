@@ -42,7 +42,7 @@ font_big = pygame.font.SysFont("arial", 44, bold=True)
 
 PLAYER_IMG = r"C:\Users\HAI\Downloads\pl2.png"
 ENEMY_IMG = r"c:\Users\HAI\Downloads\planebl.png"
-BOSS_IMG = r"C:\Users\HAI\Downloads\z7380850319506_eb5087d808de142e07350324449a2695.jpg"
+BOSS_IMG = r"c:\Users\HAI\Downloads\z7718593466873_0a142d28b5623bef36d76497091803ff.jpg"
 
 BGM_PATH = r"c:\Users\HAI\Downloads\background.wav.wav"
 BOSS_INTRO_PATH = r"c:\Users\HAI\Downloads\boss_intro.wav.wav"
@@ -142,58 +142,44 @@ def fallback_plane_surface(size=(120, 120), body=(40, 40, 40), canopy=(120, 220,
     return surf
 
 def draw_space_station(x, y):
-    """
-    Full code-drawn space station.
-    x, y = center position of station
-    """
     base_w = 330
     base_h = 54
 
-    # Glow
     glow = pygame.Surface((500, 260), SRCALPHA)
     pygame.draw.ellipse(glow, (180, 220, 255, 28), (40, 90, 420, 80))
     screen.blit(glow, (x - 250, y - 120))
 
-    # Main body
     body_rect = pygame.Rect(x - base_w // 2, y - base_h // 2, base_w, base_h)
     pygame.draw.rect(screen, SILVER, body_rect, border_radius=6)
     pygame.draw.rect(screen, WHITE, body_rect, 2, border_radius=6)
 
-    # Panel lines on main body
     for i in range(1, 7):
         px = body_rect.x + i * (base_w // 7)
         pygame.draw.line(screen, DARK_SILVER, (px, body_rect.y + 3), (px, body_rect.bottom - 3), 1)
 
-    # Central node
     core = pygame.Rect(x - 38, y - 34, 76, 68)
     pygame.draw.rect(screen, SPACE_GREY, core, border_radius=6)
     pygame.draw.rect(screen, WHITE, core, 2, border_radius=6)
 
-    # Windows / ports
     for wx in [-18, 0, 18]:
         pygame.draw.circle(screen, CYAN, (x + wx, y - 6), 5)
         pygame.draw.circle(screen, WHITE, (x + wx, y - 6), 5, 1)
 
-    # Top module
     top_mod = pygame.Rect(x - 24, y - 60, 48, 20)
     pygame.draw.rect(screen, DARK_SILVER, top_mod, border_radius=4)
     pygame.draw.rect(screen, WHITE, top_mod, 1, border_radius=4)
 
-    # Bottom docking module
     dock = pygame.Rect(x - 16, y + 34, 32, 26)
     pygame.draw.rect(screen, DARK_SILVER, dock, border_radius=3)
     pygame.draw.rect(screen, WHITE, dock, 1, border_radius=3)
 
-    # Antennas
     pygame.draw.line(screen, WHITE, (x - 8, y - 60), (x - 20, y - 92), 2)
     pygame.draw.line(screen, WHITE, (x + 8, y - 60), (x + 20, y - 92), 2)
     pygame.draw.circle(screen, YELLOW, (x - 20, y - 92), 3)
     pygame.draw.circle(screen, YELLOW, (x + 20, y - 92), 3)
 
-    # Truss
     pygame.draw.line(screen, WHITE, (x - 120, y), (x + 120, y), 2)
 
-    # Left solar panel arm
     pygame.draw.line(screen, WHITE, (x - 80, y), (x - 120, y), 3)
     left_panel = pygame.Rect(x - 250, y - 38, 110, 76)
     pygame.draw.rect(screen, (40, 80, 155), left_panel)
@@ -205,7 +191,6 @@ def draw_space_station(x, y):
         gy = left_panel.y + i * (left_panel.h // 4)
         pygame.draw.line(screen, (120, 170, 255), (left_panel.x, gy), (left_panel.right, gy), 1)
 
-    # Right solar panel arm
     pygame.draw.line(screen, WHITE, (x + 80, y), (x + 120, y), 3)
     right_panel = pygame.Rect(x + 140, y - 38, 110, 76)
     pygame.draw.rect(screen, (40, 80, 155), right_panel)
@@ -217,7 +202,6 @@ def draw_space_station(x, y):
         gy = right_panel.y + i * (right_panel.h // 4)
         pygame.draw.line(screen, (120, 170, 255), (right_panel.x, gy), (right_panel.right, gy), 1)
 
-    # Side modules
     left_mod = pygame.Rect(x - 120, y - 18, 38, 36)
     right_mod = pygame.Rect(x + 82, y - 18, 38, 36)
     pygame.draw.rect(screen, DARK_SILVER, left_mod, border_radius=4)
@@ -225,7 +209,6 @@ def draw_space_station(x, y):
     pygame.draw.rect(screen, WHITE, left_mod, 1, border_radius=4)
     pygame.draw.rect(screen, WHITE, right_mod, 1, border_radius=4)
 
-    # Label plate
     plate = pygame.Rect(x - 145, y - 16, 290, 22)
     pygame.draw.rect(screen, (225, 228, 235), plate, border_radius=3)
     pygame.draw.rect(screen, WHITE, plate, 1, border_radius=3)
@@ -484,6 +467,8 @@ class Game:
     def set_game_over(self):
         if self.state != "OVER":
             self.state = "OVER"
+            self.bullets.clear()
+            self.boss_bullets.clear()
             play_sound(SND_GAME_OVER)
             stop_music()
 
@@ -497,7 +482,6 @@ class Game:
             if self.win_anim_y < H // 4:
                 self.win_anim_y += 2
 
-            # Move player gently toward the station
             target_x = W // 2
             target_y = self.win_anim_y + 150
 
@@ -522,7 +506,6 @@ class Game:
         self.player.move(self.keys)
         self.player.skill = min(self.player.max_skill, self.player.skill + 0.05)
 
-        # Boss intro trigger
         if self.score >= 400 and not self.boss.active:
             self.boss.active = True
             self.enemies.clear()
@@ -531,7 +514,6 @@ class Game:
                 self.boss_intro_played = True
                 play_music(BOSS_INTRO_PATH, loops=0, volume=0.42)
 
-        # Boss battle
         if self.boss.active and not self.boss.dead:
             self.boss.update()
 
@@ -545,7 +527,6 @@ class Game:
                     s = random.uniform(5, 8)
                     self.boss_bullets.append([self.boss.x, self.boss.y + 70, math.cos(ang) * s, math.sin(ang) * s])
 
-        # Player shoot
         rate = max(5, self.base_fire_rate - (self.score // 25))
         if self.frame % rate == 0:
             bc = 3 if self.score >= 300 else (2 if self.score >= 150 else 1)
@@ -564,7 +545,6 @@ class Game:
                 ])
             play_sound(SND_SHOOT)
 
-        # Bullet update
         new_bullets = []
         for b in self.bullets:
             b[1] -= 16
@@ -579,7 +559,7 @@ class Game:
                 if self.boss.hp <= 0:
                     self.boss.dead = True
                     self.boss_bullets.clear()
-                    self.bullets.clear()       # remove yellow lines
+                    self.bullets.clear()
                     self.enemies.clear()
                     self.add_explosion(self.boss.x, self.boss.y, (255, 160, 50), 300)
                     self.state = "WON"
@@ -602,7 +582,6 @@ class Game:
 
         self.bullets = new_bullets
 
-        # Boss bullets
         new_boss_bullets = []
         for b in self.boss_bullets:
             b[0] += b[2]
@@ -619,7 +598,6 @@ class Game:
                 new_boss_bullets.append(b)
         self.boss_bullets = new_boss_bullets
 
-        # Enemies
         for e in self.enemies[:]:
             e.update()
 
@@ -651,10 +629,7 @@ class Game:
         pygame.draw.rect(screen, WHITE, (18, 18, 180, 18), 2, border_radius=6)
         draw_text("HP", font_small, WHITE, 24, 16)
 
-        pygame.draw.rect(screen, (20, 20, 28), (18, 44, 180, 14), border_radius=6)
-        pygame.draw.rect(screen, BLUE, (18, 44, int(180 * self.player.skill / self.player.max_skill), 14), border_radius=6)
-        pygame.draw.rect(screen, WHITE, (18, 44, 180, 14), 2, border_radius=6)
-        draw_text("SKILL", font_small, WHITE, 206, 38)
+    
 
         if self.state == "PLAYING":
             draw_text(f"SCORE: {self.score} | GOAL: 400", font_small, WHITE, 15, H - 30)
@@ -676,7 +651,6 @@ class Game:
 
             draw_space_station(station_x, station_y)
 
-            # Draw only player and effects in win scene
             for ex in self.explosions:
                 ex.draw()
 
@@ -696,17 +670,17 @@ class Game:
         for e in self.enemies:
             e.draw()
 
-        for b in self.bullets:
-            pygame.draw.line(screen, YELLOW, (b[0], b[1]), (b[0], b[1] - 25), 4)
-
-        for b in self.boss_bullets:
-            pygame.draw.circle(screen, PURPLE, (int(b[0]), int(b[1])), 8)
-            pygame.draw.circle(screen, WHITE, (int(b[0]), int(b[1])), 8, 1)
-
-        for ex in self.explosions:
-            ex.draw()
-
         if self.state != "OVER":
+            for b in self.bullets:
+                pygame.draw.line(screen, YELLOW, (b[0], b[1]), (b[0], b[1] - 25), 4)
+
+            for b in self.boss_bullets:
+                pygame.draw.circle(screen, PURPLE, (int(b[0]), int(b[1])), 8)
+                pygame.draw.circle(screen, WHITE, (int(b[0]), int(b[1])), 8, 1)
+
+            for ex in self.explosions:
+                ex.draw()
+
             self.player.draw()
         else:
             draw_text("MISSION FAILED", font_big, RED, W // 2, H // 2 - 20, center=True)
