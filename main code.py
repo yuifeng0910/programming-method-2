@@ -38,7 +38,7 @@ PLAYER_IMG = r"C:\Users\HAI\Downloads\pl2.png"
 ENEMY_IMG = r"c:\Users\HAI\Downloads\planebl.png"
 BOSS_IMG = r"c:\Users\HAI\Downloads\z7718593466873_0a142d28b5623bef36d76497091803ff.jpg"
 
-BGM_PATH = r"c:\Users\HAI\Downloads\background.wav.wav"
+BGM_PATH = r"c:\Users\HAI\Downloads\background.wav (1).wav"
 BOSS_INTRO_PATH = r"c:\Users\HAI\Downloads\boss_intro.wav.wav"
 BOSS_BATTLE_PATH = r"c:\Users\HAI\Downloads\boss_battle.wav.wav"
 
