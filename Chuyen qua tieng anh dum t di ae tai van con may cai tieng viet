@@ -1,513 +1,349 @@
 import pygame, random, math, sys, os
 from pygame import SRCALPHA
 
-pygame.mixer.pre_init(44100, -16, 2, 512)
+pygame.mixer.pre_init(44100,-16,2,512)
 pygame.init()
-if not pygame.mixer.get_init():
-    pygame.mixer.init()
+if not pygame.mixer.get_init(): pygame.mixer.init()
 
-W, H, FPS = 700, 900, 60
-screen = pygame.display.set_mode((W, H))
-pygame.display.set_caption("Sky Force Deluxe - Compact ISS")
-clock = pygame.time.Clock()
+W,H,FPS=700,900,60
+screen=pygame.display.set_mode((W,H))
+pygame.display.set_caption("HORSEWAR: THE UNKNOWN MYSTERY")
+clock=pygame.time.Clock()
 
 WHITE=(255,255,255); BLACK=(10,10,10); RED=(255,70,70); YELLOW=(255,220,80)
-CYAN=(100,220,255); ORANGE=(255,140,60); PURPLE=(220,100,255)
-SILVER=(205,210,220); DARK=(120,130,145); GREY=(70,78,96)
-B1=(95,70,55); B2=(130,95,70); B3=(165,125,92)
+CYAN=(100,220,255); PURPLE=(220,100,255); SILVER=(205,210,220); DARK=(120,130,145)
+GREY=(70,78,96); B1=(95,70,55); B2=(130,95,70); B3=(165,125,92)
 
-font_s = pygame.font.SysFont("monospace", 18, bold=True)
-font_m = pygame.font.SysFont("arial", 28, bold=True)
-font_b = pygame.font.SysFont("arial", 44, bold=True)
+fs=pygame.font.SysFont("monospace",18,True)
+fm=pygame.font.SysFont("arial",28,True)
+fb=pygame.font.SysFont("arial",44,True)
 
-PLAYER_IMG = r"C:\Users\HAI\Downloads\pl2.png"
-ENEMY_IMG  = r"c:\Users\HAI\Downloads\planebl.png"
-BOSS_IMG   = r"c:\Users\HAI\Downloads\z7718593466873_0a142d28b5623bef36d76497091803ff.jpg"
+PLAYER_IMG=r"C:\Users\HAI\Downloads\pl2.png"
+ENEMY_IMG=r"c:\Users\HAI\Downloads\planebl.png"
+BOSS_IMG=r"c:\Users\HAI\Downloads\z7718593466873_0a142d28b5623bef36d76497091803ff.jpg"
+BGM=r"c:\Users\HAI\Downloads\background.wav (1).wav"
+BINTRO=r"c:\Users\HAI\Downloads\boss_intro.wav.wav"
+BBATTLE=r"c:\Users\HAI\Downloads\boss_battle.wav.wav"
+EXPLO=r"c:\Users\HAI\Downloads\explosion.wav.wav"
+GOVER=r"c:\Users\HAI\Downloads\game_over.wav.wav"
+SHOOT=r"C:\Users\HAI\Downloads\shoot.wav"
+VICTORY=r"c:\Users\HAI\Downloads\winning.wav.wav"
 
-BGM_PATH         = r"c:\Users\HAI\Downloads\background.wav (1).wav"
-BOSS_INTRO_PATH  = r"c:\Users\HAI\Downloads\boss_intro.wav.wav"
-BOSS_BATTLE_PATH = r"c:\Users\HAI\Downloads\boss_battle.wav.wav"
-EXPLOSION_WAV    = r"c:\Users\HAI\Downloads\explosion.wav.wav"
-GAME_OVER_WAV    = r"c:\Users\HAI\Downloads\game_over.wav.wav"
-HIT_WAV          = r"/mnt/data/hit.wav.wav"
-SHOOT_WAV        = r"C:\Users\HAI\Downloads\shoot.wav"
-VICTORY_WAV      = r"C:\Users\HAI\Downloads\victory.wav"
-
-def load_sound(path, volume=0.5):
+def ls(p,v=.5):
     try:
-        if path and os.path.exists(path):
-            s = pygame.mixer.Sound(path)
-            s.set_volume(volume)
-            return s
-    except:
-        pass
-    return None
+        if p and os.path.exists(p):
+            s=pygame.mixer.Sound(p); s.set_volume(v); return s
+    except: pass
 
-def play_sound(s):
+def ps(s):
     try:
         if s: s.play()
-    except:
-        pass
+    except: pass
 
-def play_music(path, loops=-1, volume=0.4):
+def pm(p,l=-1,v=.4):
     try:
-        if path and os.path.exists(path):
+        if p and os.path.exists(p):
             pygame.mixer.music.stop()
-            pygame.mixer.music.load(path)
-            pygame.mixer.music.set_volume(volume)
-            pygame.mixer.music.play(loops)
-    except:
-        pass
+            pygame.mixer.music.load(p)
+            pygame.mixer.music.set_volume(v)
+            pygame.mixer.music.play(l)
+    except: pass
 
-def stop_music():
+def sm():
     try: pygame.mixer.music.stop()
     except: pass
 
-def draw_text(text, font, color, x, y, center=False):
-    img = font.render(text, True, color)
-    screen.blit(img, img.get_rect(center=(x, y)) if center else (x, y))
+def ss():
+    try: pygame.mixer.stop()
+    except: pass
 
-def load_img(path, size, alpha=True):
-    img = pygame.image.load(path)
-    img = img.convert_alpha() if alpha else img.convert()
-    return pygame.transform.scale(img, size)
+def txt(t,f,c,x,y,ct=False):
+    i=f.render(t,1,c)
+    screen.blit(i,i.get_rect(center=(x,y)) if ct else (x,y))
 
-def fallback_plane(size=(120,120), body=(40,40,40), canopy=(120,220,255)):
-    surf = pygame.Surface(size, SRCALPHA)
-    w,h=size; cx=w//2
-    pts=[(cx,8),(cx+20,32),(cx+26,66),(cx+12,108),(cx-12,108),(cx-26,66),(cx-20,32)]
-    pygame.draw.polygon(surf, body, pts)
-    pygame.draw.polygon(surf, WHITE, pts, 2)
-    pygame.draw.polygon(surf, body, [(cx-18,48),(8,78),(cx-10,66)])
-    pygame.draw.polygon(surf, body, [(cx+18,48),(w-8,78),(cx+10,66)])
-    pygame.draw.ellipse(surf, canopy, (cx-8,28,16,26))
-    return surf
+def img(p,s,a=True):
+    i=pygame.image.load(p)
+    i=i.convert_alpha() if a else i.convert()
+    return pygame.transform.scale(i,s)
 
-def asteroid_surface(r):
-    surf = pygame.Surface((r*2+8, r*2+8), SRCALPHA)
-    c = r+4
-    pts=[]
-    for i in range(12):
-        a = math.tau*i/12
-        rr = r + random.randint(-6, 6)
-        pts.append((c+math.cos(a)*rr, c+math.sin(a)*rr))
-    pygame.draw.polygon(surf, B2, pts)
-    pygame.draw.polygon(surf, B3, pts, 3)
+def plane(size=(120,120),body=(40,40,40),can=(120,220,255)):
+    sf=pygame.Surface(size,SRCALPHA); w,h=size; c=w//2
+    pts=[(c,8),(c+20,32),(c+26,66),(c+12,108),(c-12,108),(c-26,66),(c-20,32)]
+    pygame.draw.polygon(sf,body,pts); pygame.draw.polygon(sf,WHITE,pts,2)
+    pygame.draw.polygon(sf,body,[(c-18,48),(8,78),(c-10,66)])
+    pygame.draw.polygon(sf,body,[(c+18,48),(w-8,78),(c+10,66)])
+    pygame.draw.ellipse(sf,can,(c-8,28,16,26))
+    return sf
+
+def asteroid_img(r):
+    sf=pygame.Surface((r*2+8,r*2+8),SRCALPHA); c=r+4
+    pts=[(c+math.cos(math.tau*i/12)*(r+random.randint(-6,6)),c+math.sin(math.tau*i/12)*(r+random.randint(-6,6))) for i in range(12)]
+    pygame.draw.polygon(sf,B2,pts); pygame.draw.polygon(sf,B3,pts,3)
     for _ in range(5):
-        rr=random.randint(4,max(5,r//3))
-        x=random.randint(c-r//2,c+r//2); y=random.randint(c-r//2,c+r//2)
-        pygame.draw.circle(surf, B1, (x,y), rr)
-    return surf
+        pygame.draw.circle(sf,B1,(random.randint(c-r//2,c+r//2),random.randint(c-r//2,c+r//2)),random.randint(4,max(5,r//3)))
+    return sf
 
-def draw_iss(x, y):
-    glow = pygame.Surface((620, 300), SRCALPHA)
-    pygame.draw.ellipse(glow, (120,180,255,22), (40, 110, 540, 80))
-    screen.blit(glow, (x-310, y-150))
+def iss(x,y):
+    g=pygame.Surface((620,300),SRCALPHA)
+    pygame.draw.ellipse(g,(120,180,255,22),(40,110,540,80)); screen.blit(g,(x-310,y-150))
+    pygame.draw.line(screen,WHITE,(x-180,y),(x+180,y),4)
+    for i in range(-150,151,30):
+        pygame.draw.line(screen,DARK,(x+i,y-10),(x+i+15,y+10),2)
+        pygame.draw.line(screen,DARK,(x+i,y+10),(x+i+15,y-10),2)
+    for px in (x-255,x+145):
+        p=pygame.Rect(px,y-58,110,116)
+        pygame.draw.rect(screen,(35,75,150),p,border_radius=4); pygame.draw.rect(screen,WHITE,p,2,border_radius=4)
+        for gx in range(p.x+22,p.right,22): pygame.draw.line(screen,(120,170,255),(gx,p.y),(gx,p.bottom),1)
+        for gy in range(p.y+19,p.bottom,19): pygame.draw.line(screen,(120,170,255),(p.x,gy),(p.right,gy),1)
+    pygame.draw.line(screen,WHITE,(x-180,y),(x-145,y),3); pygame.draw.line(screen,WHITE,(x+145,y),(x+180,y),3)
+    b=pygame.Rect(x-95,y-26,190,52); h=pygame.Rect(x-34,y-44,68,88)
+    pygame.draw.rect(screen,SILVER,b,border_radius=8); pygame.draw.rect(screen,WHITE,b,2,border_radius=8)
+    pygame.draw.rect(screen,GREY,h,border_radius=8); pygame.draw.rect(screen,WHITE,h,2,border_radius=8)
+    for gx in range(b.x+24,b.right,24): pygame.draw.line(screen,DARK,(gx,b.y+4),(gx,b.bottom-4),1)
+    for rx in (-125,88):
+        m=pygame.Rect(x+rx,y-18,36,36); pygame.draw.rect(screen,DARK,m,border_radius=5); pygame.draw.rect(screen,WHITE,m,1,border_radius=5)
+    for r in (pygame.Rect(x-22,y-72,44,18),pygame.Rect(x-18,y+48,36,24)):
+        pygame.draw.rect(screen,DARK,r,border_radius=4); pygame.draw.rect(screen,WHITE,r,1,border_radius=4)
+    pygame.draw.line(screen,WHITE,(x-8,y-72),(x-24,y-102),2); pygame.draw.line(screen,WHITE,(x+8,y-72),(x+24,y-102),2)
+    pygame.draw.circle(screen,YELLOW,(x-24,y-102),3); pygame.draw.circle(screen,YELLOW,(x+24,y-102),3)
+    for wx in (-16,0,16):
+        pygame.draw.circle(screen,CYAN,(x+wx,y-8),5); pygame.draw.circle(screen,WHITE,(x+wx,y-8),5,1)
+    p=pygame.Rect(x-120,y-14,240,20)
+    pygame.draw.rect(screen,(228,232,238),p,border_radius=3); pygame.draw.rect(screen,WHITE,p,1,border_radius=3)
+    txt("ISS INTERNATIONAL SPACE STATION",fs,BLACK,x,y-4,1)
 
-    # main truss
-    pygame.draw.line(screen, WHITE, (x-180, y), (x+180, y), 4)
-    for i in range(-150, 151, 30):
-        pygame.draw.line(screen, DARK, (x+i, y-10), (x+i+15, y+10), 2)
-        pygame.draw.line(screen, DARK, (x+i, y+10), (x+i+15, y-10), 2)
-
-    # solar panels
-    for px in (x-255, x+145):
-        panel = pygame.Rect(px, y-58, 110, 116)
-        pygame.draw.rect(screen, (35,75,150), panel, border_radius=4)
-        pygame.draw.rect(screen, WHITE, panel, 2, border_radius=4)
-        for gx in range(panel.x+22, panel.right, 22):
-            pygame.draw.line(screen, (120,170,255), (gx, panel.y), (gx, panel.bottom), 1)
-        for gy in range(panel.y+19, panel.bottom, 19):
-            pygame.draw.line(screen, (120,170,255), (panel.x, gy), (panel.right, gy), 1)
-
-    # connectors
-    pygame.draw.line(screen, WHITE, (x-180, y), (x-145, y), 3)
-    pygame.draw.line(screen, WHITE, (x+145, y), (x+180, y), 3)
-
-    # main body
-    body = pygame.Rect(x-95, y-26, 190, 52)
-    pygame.draw.rect(screen, SILVER, body, border_radius=8)
-    pygame.draw.rect(screen, WHITE, body, 2, border_radius=8)
-    for gx in range(body.x+24, body.right, 24):
-        pygame.draw.line(screen, DARK, (gx, body.y+4), (gx, body.bottom-4), 1)
-
-    # center hub
-    hub = pygame.Rect(x-34, y-44, 68, 88)
-    pygame.draw.rect(screen, GREY, hub, border_radius=8)
-    pygame.draw.rect(screen, WHITE, hub, 2, border_radius=8)
-
-    # side modules
-    for rx in (-125, 88):
-        mod = pygame.Rect(x+rx, y-18, 36, 36)
-        pygame.draw.rect(screen, DARK, mod, border_radius=5)
-        pygame.draw.rect(screen, WHITE, mod, 1, border_radius=5)
-
-    # top/bottom modules
-    top = pygame.Rect(x-22, y-72, 44, 18)
-    bot = pygame.Rect(x-18, y+48, 36, 24)
-    pygame.draw.rect(screen, DARK, top, border_radius=4)
-    pygame.draw.rect(screen, DARK, bot, border_radius=4)
-    pygame.draw.rect(screen, WHITE, top, 1, border_radius=4)
-    pygame.draw.rect(screen, WHITE, bot, 1, border_radius=4)
-
-    # antennae
-    pygame.draw.line(screen, WHITE, (x-8, y-72), (x-24, y-102), 2)
-    pygame.draw.line(screen, WHITE, (x+8, y-72), (x+24, y-102), 2)
-    pygame.draw.circle(screen, YELLOW, (x-24, y-102), 3)
-    pygame.draw.circle(screen, YELLOW, (x+24, y-102), 3)
-
-    # windows
-    for wx in (-16, 0, 16):
-        pygame.draw.circle(screen, CYAN, (x+wx, y-8), 5)
-        pygame.draw.circle(screen, WHITE, (x+wx, y-8), 5, 1)
-
-    # label plate
-    plate = pygame.Rect(x-120, y-14, 240, 20)
-    pygame.draw.rect(screen, (228,232,238), plate, border_radius=3)
-    pygame.draw.rect(screen, WHITE, plate, 1, border_radius=3)
-    draw_text("ISS INTERNATIONAL SPACE STATION", font_s, BLACK, x, y-4, center=True)
-
-class Background:
-    def __init__(self):
-        self.stars = [[random.randint(0,W), random.randint(0,H), random.randint(1,3)] for _ in range(140)]
-        self.lines = [[random.randint(0,W), random.randint(0,H), random.randint(10,24)] for _ in range(45)]
-
-    def draw(self):
-        top, mid, bot = (6,8,20), (18,26,46), (8,12,26)
+class Bg:
+    def __init__(s):
+        s.st=[[random.randint(0,W),random.randint(0,H),random.randint(1,3)] for _ in range(140)]
+        s.li=[[random.randint(0,W),random.randint(0,H),random.randint(10,24)] for _ in range(45)]
+    def draw(s):
+        t,m,b=(6,8,20),(18,26,46),(8,12,26)
         for y in range(H):
-            t = y/(H//2) if y < H//2 else (y-H//2)/(H//2)
-            c = tuple(int(top[i]+(mid[i]-top[i])*t) if y < H//2 else int(mid[i]+(bot[i]-mid[i])*t) for i in range(3))
-            pygame.draw.line(screen, c, (0,y), (W,y))
-        for s in self.stars:
-            s[1] += s[2]
-            if s[1] > H: s[0], s[1] = random.randint(0,W), 0
-            pygame.draw.circle(screen, (220,220,240), (s[0], s[1]), max(1, s[2]-1))
-        for l in self.lines:
-            l[1] += 15
-            if l[1] > H: l[0], l[1] = random.randint(0,W), -20
-            pygame.draw.line(screen, (80,120,180), (l[0],l[1]), (l[0],l[1]+l[2]), 1)
+            k=y/(H//2) if y<H//2 else (y-H//2)/(H//2)
+            c=tuple(int(t[i]+(m[i]-t[i])*k) if y<H//2 else int(m[i]+(b[i]-m[i])*k) for i in range(3))
+            pygame.draw.line(screen,c,(0,y),(W,y))
+        for a in s.st:
+            a[1]+=a[2]
+            if a[1]>H: a[0],a[1]=random.randint(0,W),0
+            pygame.draw.circle(screen,(220,220,240),(a[0],a[1]),max(1,a[2]-1))
+        for a in s.li:
+            a[1]+=15
+            if a[1]>H: a[0],a[1]=random.randint(0,W),-20
+            pygame.draw.line(screen,(80,120,180),(a[0],a[1]),(a[0],a[1]+a[2]),1)
 
 class Explosion:
-    def __init__(self, x, y, max_r=70, color=(255,120,50)):
-        self.x, self.y, self.r, self.max_r, self.color = x, y, 8, max_r, color
-    def update(self): self.r += 4
-    def alive(self): return self.r <= self.max_r
-    def draw(self):
-        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), int(self.r))
-        pygame.draw.circle(screen, WHITE, (int(self.x), int(self.y)), int(self.r), 1)
+    def __init__(s,x,y,m=70,c=(255,120,50)): s.x,s.y,s.r,s.m,s.c=x,y,8,m,c
+    def update(s): s.r+=4
+    def alive(s): return s.r<=s.m
+    def draw(s):
+        pygame.draw.circle(screen,s.c,(int(s.x),int(s.y)),int(s.r))
+        pygame.draw.circle(screen,WHITE,(int(s.x),int(s.y)),int(s.r),1)
 
 class Player:
-    def __init__(self, sprite):
-        self.sprite, self.x, self.y, self.speed = sprite, W//2, H-140, 8
-        self.hp = self.max_hp = 100
-        self.hitbox = pygame.Rect(self.x-35, self.y-45, 70, 90)
-    def move(self, keys):
-        if keys["left"]: self.x -= self.speed
-        if keys["right"]: self.x += self.speed
-        if keys["up"]: self.y -= self.speed
-        if keys["down"]: self.y += self.speed
-        self.x = max(60, min(W-60, self.x))
-        self.y = max(80, min(H-80, self.y))
-        self.hitbox = pygame.Rect(self.x-35, self.y-45, 70, 90)
-    def draw(self):
-        shadow = pygame.Surface((90,35), SRCALPHA)
-        pygame.draw.ellipse(shadow, (0,0,0,110), (0,0,90,35))
-        screen.blit(shadow, (self.x-45, self.y+22))
-        screen.blit(self.sprite, self.sprite.get_rect(center=(self.x, self.y)))
+    def __init__(s,sp):
+        s.sp,s.x,s.y,s.v=sp,W//2,H-140,8
+        s.hp=s.max_hp=100; s.hit=pygame.Rect(s.x-35,s.y-45,70,90)
+    def move(s,k):
+        if k["left"]: s.x-=s.v
+        if k["right"]: s.x+=s.v
+        if k["up"]: s.y-=s.v
+        if k["down"]: s.y+=s.v
+        s.x=max(60,min(W-60,s.x)); s.y=max(80,min(H-80,s.y)); s.hit=pygame.Rect(s.x-35,s.y-45,70,90)
+    def draw(s):
+        sh=pygame.Surface((90,35),SRCALPHA)
+        pygame.draw.ellipse(sh,(0,0,0,110),(0,0,90,35))
+        screen.blit(sh,(s.x-45,s.y+22)); screen.blit(s.sp,s.sp.get_rect(center=(s.x,s.y)))
 
 class Enemy:
-    def __init__(self, sprite):
-        self.sprite, self.x, self.y, self.hp, self.max_hp, self.speed = sprite, random.randint(80,W-80), -80, 3, 3, 4
-    def rect(self): return pygame.Rect(self.x-35, self.y-45, 70, 90)
-    def update(self): self.y += self.speed
-    def draw(self):
-        screen.blit(self.sprite, self.sprite.get_rect(center=(self.x, self.y)))
-        pygame.draw.rect(screen, BLACK, (self.x-25, self.y-52, 50, 5))
-        pygame.draw.rect(screen, RED, (self.x-25, self.y-52, int(self.hp/self.max_hp*50), 5))
+    def __init__(s,sp): s.sp,s.x,s.y,s.hp,s.max_hp,s.v=sp,random.randint(80,W-80),-80,3,3,4
+    def rect(s): return pygame.Rect(s.x-35,s.y-45,70,90)
+    def update(s): s.y+=s.v
+    def draw(s):
+        screen.blit(s.sp,s.sp.get_rect(center=(s.x,s.y)))
+        pygame.draw.rect(screen,BLACK,(s.x-25,s.y-52,50,5))
+        pygame.draw.rect(screen,RED,(s.x-25,s.y-52,int(s.hp/s.max_hp*50),5))
 
 class Asteroid:
-    def __init__(self):
-        self.radius = random.randint(20, 40)
-        self.base = asteroid_surface(self.radius)
-        self.angle = random.randint(0, 360)
-        self.rot = random.choice([-4,-3,-2,2,3,4])
-        self.x = random.randint(self.radius+20, W-self.radius-20)
-        self.y = -random.randint(60, 220)
-        self.vy = random.uniform(3.5, 6.5)
-        self.vx = random.uniform(-1.2, 1.2)
-        self.hp = self.max_hp = 2 if self.radius < 30 else 3
-        self.damage = 20 if self.radius < 30 else 35
-    def rect(self): return pygame.Rect(self.x-self.radius, self.y-self.radius, self.radius*2, self.radius*2)
-    def update(self):
-        self.y += self.vy; self.x += self.vx; self.angle = (self.angle+self.rot) % 360
-    def draw(self):
-        img = pygame.transform.rotate(self.base, self.angle)
-        screen.blit(img, img.get_rect(center=(self.x, self.y)))
+    def __init__(s):
+        s.r=random.randint(20,40); s.base=asteroid_img(s.r); s.a=random.randint(0,360); s.rot=random.choice([-4,-3,-2,2,3,4])
+        s.x=random.randint(s.r+20,W-s.r-20); s.y=-random.randint(60,220); s.vy=random.uniform(3.5,6.5); s.vx=random.uniform(-1.2,1.2)
+        s.hp=s.max_hp=2 if s.r<30 else 3; s.damage=20 if s.r<30 else 35
+    def rect(s): return pygame.Rect(s.x-s.r,s.y-s.r,s.r*2,s.r*2)
+    def update(s): s.y+=s.vy; s.x+=s.vx; s.a=(s.a+s.rot)%360
+    def draw(s):
+        i=pygame.transform.rotate(s.base,s.a); screen.blit(i,i.get_rect(center=(s.x,s.y)))
 
 class Boss:
-    def __init__(self, sprite=None):
-        self.sprite, self.x, self.y = sprite, W//2, -200
-        self.hp = self.max_hp = 350
-        self.active = self.dead = False
-        self.fire_rate = 40
-        self.phase = 0
-    def rect(self): return pygame.Rect(self.x-150, self.y-110, 300, 220)
-    def update(self):
-        if self.y < 145: self.y += 1.4
-        self.phase += 1
-        self.x += math.sin(self.phase*0.03)*1.1
-    def draw(self):
-        if not self.active or self.dead: return
-        pygame.draw.rect(screen, (25,25,30), (90,18,W-180,18), border_radius=8)
-        pygame.draw.rect(screen, RED, (90,18,int((self.hp/self.max_hp)*(W-180)),18), border_radius=8)
-        pygame.draw.rect(screen, WHITE, (90,18,W-180,18), 2, border_radius=8)
-        draw_text(f"BOSS: {self.hp}/{self.max_hp}", font_s, WHITE, W//2, 46, center=True)
-        if self.sprite: screen.blit(self.sprite, self.sprite.get_rect(center=(self.x,self.y)))
+    def __init__(s,sp=None): s.sp,s.x,s.y,s.hp,s.max_hp,s.active,s.dead,s.fr,s.ph=sp,W//2,-200,350,350,0,0,40,0
+    def rect(s): return pygame.Rect(s.x-150,s.y-110,300,220)
+    def update(s):
+        if s.y<145: s.y+=1.4
+        s.ph+=1; s.x+=math.sin(s.ph*0.03)*1.1
+    def draw(s):
+        if not s.active or s.dead: return
+        pygame.draw.rect(screen,(25,25,30),(90,18,W-180,18),border_radius=8)
+        pygame.draw.rect(screen,RED,(90,18,int((s.hp/s.max_hp)*(W-180)),18),border_radius=8)
+        pygame.draw.rect(screen,WHITE,(90,18,W-180,18),2,border_radius=8)
+        txt(f"BOSS: {s.hp}/{s.max_hp}",fs,WHITE,W//2,46,1)
+        if s.sp: screen.blit(s.sp,s.sp.get_rect(center=(s.x,s.y)))
 
 class Game:
-    def __init__(self):
-        try: self.player_sprite = load_img(PLAYER_IMG, (120,120), True)
-        except: self.player_sprite = fallback_plane((120,120), (35,35,35), CYAN)
-        try: self.enemy_sprite = load_img(ENEMY_IMG, (120,120), True)
-        except: self.enemy_sprite = fallback_plane((120,120), (150,25,25), (255,180,180))
-        try: self.boss_sprite = load_img(BOSS_IMG, (300,220), False)
-        except: self.boss_sprite = None
-        self.bg = Background()
-        self.reset()
+    def __init__(s):
+        try: s.psp=img(PLAYER_IMG,(120,120),1)
+        except: s.psp=plane((120,120),(35,35,35),CYAN)
+        try: s.esp=img(ENEMY_IMG,(120,120),1)
+        except: s.esp=plane((120,120),(150,25,25),(255,180,180))
+        try: s.bsp=img(BOSS_IMG,(300,220),0)
+        except: s.bsp=None
+        s.bg=Bg(); s.reset()
 
-    def reset(self):
-        self.state = "START"
-        self.player = Player(self.player_sprite)
-        self.enemies, self.asteroids, self.bullets, self.boss_bullets, self.explosions = [], [], [], [], []
-        self.keys = {"left":False,"right":False,"up":False,"down":False}
-        self.score = self.frame = 0
-        self.base_fire_rate = 14
-        self.win_anim_y = -220
-        self.boss = Boss(self.boss_sprite)
-        self.victory_played = self.boss_intro_played = self.boss_battle_played = False
-        stop_music()
+    def reset(s):
+        ss(); sm()
+        s.state="START"; s.p=Player(s.psp); s.en=[]; s.asd=[]; s.bu=[]; s.bbu=[]; s.ex=[]; s.k={"left":0,"right":0,"up":0,"down":0}
+        s.score=s.frame=0; s.rate=14; s.winy=-220; s.boss=Boss(s.bsp); s.vp=s.ip=s.bp=0
 
-    def keydown(self, key):
-        if key in (pygame.K_LEFT, pygame.K_a): self.keys["left"] = True
-        if key in (pygame.K_RIGHT, pygame.K_d): self.keys["right"] = True
-        if key in (pygame.K_UP, pygame.K_w): self.keys["up"] = True
-        if key in (pygame.K_DOWN, pygame.K_s): self.keys["down"] = True
-        if self.state in ("START","OVER","WON") and key == pygame.K_SPACE:
-            self.reset(); self.state = "PLAYING"; play_music(BGM_PATH, -1, 0.30)
+    def kd(s,key):
+        if key in (pygame.K_LEFT,pygame.K_a): s.k["left"]=1
+        if key in (pygame.K_RIGHT,pygame.K_d): s.k["right"]=1
+        if key in (pygame.K_UP,pygame.K_w): s.k["up"]=1
+        if key in (pygame.K_DOWN,pygame.K_s): s.k["down"]=1
+        if s.state in ("START","OVER","WON") and key==pygame.K_SPACE:
+            ss(); sm(); s.reset(); s.state="PLAYING"; pm(BGM,-1,.30)
 
-    def keyup(self, key):
-        if key in (pygame.K_LEFT, pygame.K_a): self.keys["left"] = False
-        if key in (pygame.K_RIGHT, pygame.K_d): self.keys["right"] = False
-        if key in (pygame.K_UP, pygame.K_w): self.keys["up"] = False
-        if key in (pygame.K_DOWN, pygame.K_s): self.keys["down"] = False
+    def ku(s,key):
+        if key in (pygame.K_LEFT,pygame.K_a): s.k["left"]=0
+        if key in (pygame.K_RIGHT,pygame.K_d): s.k["right"]=0
+        if key in (pygame.K_UP,pygame.K_w): s.k["up"]=0
+        if key in (pygame.K_DOWN,pygame.K_s): s.k["down"]=0
 
-    def add_explosion(self, x, y, color=(255,120,50), max_r=70):
-        self.explosions.append(Explosion(x, y, max_r, color))
-        play_sound(SND_EXPLOSION)
+    def boom(s,x,y,c=(255,120,50),m=70): s.ex.append(Explosion(x,y,m,c)); ps(SND_EXPLOSION)
 
-    def set_game_over(self):
-        if self.state != "OVER":
-            self.state = "OVER"
-            self.bullets.clear(); self.boss_bullets.clear()
-            play_sound(SND_GAME_OVER); stop_music()
+    def over(s):
+        if s.state!="OVER":
+            ss(); sm(); s.state="OVER"; s.bu.clear(); s.bbu.clear(); ps(SND_GAME_OVER)
 
-    def damage_player(self, dmg, color=(255,80,60), r=80):
-        self.player.hp = max(0, self.player.hp-dmg)
-        play_sound(SND_HIT)
-        self.add_explosion(self.player.x, self.player.y, color, r)
-        if self.player.hp <= 0: self.set_game_over()
+    def hurt(s,d,c=(255,80,60),r=80):
+        s.p.hp=max(0,s.p.hp-d); s.boom(s.p.x,s.p.y,c,r)
+        if s.p.hp<=0: s.over()
 
-    def spawn_player_bullets(self):
-        rate = max(5, self.base_fire_rate - self.score//25)
-        if self.frame % rate: return
-        c = 3 if self.score >= 300 else 2 if self.score >= 150 else 1
-        if c == 1:
-            self.bullets.append([self.player.x, self.player.y-44])
-        elif c == 2:
-            self.bullets += [[self.player.x-18, self.player.y-28], [self.player.x+18, self.player.y-28]]
-        else:
-            self.bullets += [[self.player.x, self.player.y-48], [self.player.x-32, self.player.y-12], [self.player.x+32, self.player.y-12]]
-        play_sound(SND_SHOOT)
+    def spawn(s):
+        r=max(5,s.rate-s.score//25)
+        if s.frame%r: return
+        c=3 if s.score>=300 else 2 if s.score>=150 else 1
+        s.bu += ([[s.p.x,s.p.y-44]] if c==1 else [[s.p.x-18,s.p.y-28],[s.p.x+18,s.p.y-28]] if c==2 else [[s.p.x,s.p.y-48],[s.p.x-32,s.p.y-12],[s.p.x+32,s.p.y-12]])
+        ps(SND_SHOOT)
 
-    def update_boss(self):
-        if self.score >= 400 and not self.boss.active:
-            self.boss.active = True
-            self.enemies.clear(); self.asteroids.clear()
-            if not self.boss_intro_played:
-                self.boss_intro_played = True
-                play_music(BOSS_INTRO_PATH, 0, 0.42)
-
-        if self.boss.active and not self.boss.dead:
-            self.boss.update()
-            if self.boss.y >= 145 and not self.boss_battle_played:
-                self.boss_battle_played = True
-                play_music(BOSS_BATTLE_PATH, -1, 0.34)
-            if self.frame % self.boss.fire_rate == 0:
+    def uboss(s):
+        if s.score>=400 and not s.boss.active:
+            ss(); sm(); s.boss.active=1; s.en.clear(); s.asd.clear()
+            if not s.ip: s.ip=1; pm(BINTRO,0,.42)
+        if s.boss.active and not s.boss.dead:
+            s.boss.update()
+            if s.boss.y>=145 and not s.bp:
+                ss(); sm(); s.bp=1; pm(BBATTLE,-1,.34)
+            if s.frame%s.boss.fr==0:
                 for _ in range(7):
-                    a = random.uniform(0.7, 2.4); s = random.uniform(5, 8)
-                    self.boss_bullets.append([self.boss.x, self.boss.y+70, math.cos(a)*s, math.sin(a)*s])
+                    a=random.uniform(0.7,2.4); sp=random.uniform(5,8)
+                    s.bbu.append([s.boss.x,s.boss.y+70,math.cos(a)*sp,math.sin(a)*sp])
 
-    def hit_list(self, items, x, y):
-        for obj in items:
-            if obj.rect().collidepoint(x, y):
-                return obj
-        return None
+    def hit(s,arr,x,y):
+        for o in arr:
+            if o.rect().collidepoint(x,y): return o
 
-    def update_bullets(self):
-        new=[]
-        for b in self.bullets:
-            b[1] -= 16
-            used = False
-
-            if self.boss.active and not self.boss.dead and self.boss.rect().collidepoint(b[0], b[1]):
-                self.boss.hp = max(0, self.boss.hp-1)
-                play_sound(SND_HIT)
-                used = True
-                if self.boss.hp <= 0:
-                    self.boss.dead = True
-                    self.boss_bullets.clear(); self.bullets.clear(); self.enemies.clear(); self.asteroids.clear()
-                    self.add_explosion(self.boss.x, self.boss.y, (255,160,50), 300)
-                    self.state = "WON"
-
-            if not used:
-                e = self.hit_list(self.enemies, b[0], b[1])
-                if e:
-                    e.hp -= 1; play_sound(SND_HIT); used = True
-                    if e.hp <= 0:
-                        self.add_explosion(e.x, e.y, (241,196,15), 90)
-                        self.score += 20; self.enemies.remove(e)
-
-            if not used:
-                a = self.hit_list(self.asteroids, b[0], b[1])
-                if a:
-                    a.hp -= 1; play_sound(SND_HIT); used = True
-                    if a.hp <= 0:
-                        self.add_explosion(a.x, a.y, (255,170,70), 80)
-                        self.score += 10; self.asteroids.remove(a)
-
-            if not used and b[1] > -50: new.append(b)
-        self.bullets = new
-
-    def update_boss_bullets(self):
+    def ubu(s):
         keep=[]
-        for b in self.boss_bullets:
+        for b in s.bu:
+            b[1]-=16; used=0
+            if s.boss.active and not s.boss.dead and s.boss.rect().collidepoint(b[0],b[1]):
+                s.boss.hp=max(0,s.boss.hp-1); used=1
+                if s.boss.hp<=0:
+                    ss(); sm(); s.boss.dead=1; s.bbu.clear(); s.bu.clear(); s.en.clear(); s.asd.clear(); s.boom(s.boss.x,s.boss.y,(255,160,50),300); s.state="WON"
+            if not used:
+                e=s.hit(s.en,b[0],b[1])
+                if e:
+                    e.hp-=1; used=1
+                    if e.hp<=0: s.boom(e.x,e.y,(241,196,15),90); s.score+=20; s.en.remove(e)
+            if not used:
+                a=s.hit(s.asd,b[0],b[1])
+                if a:
+                    a.hp-=1; used=1
+                    if a.hp<=0: s.boom(a.x,a.y,(255,170,70),80); s.score+=10; s.asd.remove(a)
+            if not used and b[1]>-50: keep.append(b)
+        s.bu=keep
+
+    def ubbu(s):
+        keep=[]
+        for b in s.bbu:
             b[0]+=b[2]; b[1]+=b[3]
-            if self.player.hitbox.collidepoint(b[0], b[1]):
-                self.damage_player(20)
-            elif -100 < b[1] < H+20 and 0 < b[0] < W:
-                keep.append(b)
-        self.boss_bullets = keep
+            if s.p.hit.collidepoint(b[0],b[1]): s.hurt(20)
+            elif -100<b[1]<H+20 and 0<b[0]<W: keep.append(b)
+        s.bbu=keep
 
-    def update_objects(self, arr, damage, color, r, limit=80):
-        for obj in arr[:]:
-            obj.update()
-            if obj.rect().colliderect(self.player.hitbox):
-                self.damage_player(damage(obj) if callable(damage) else damage, color, r)
-                arr.remove(obj)
-            elif obj.y > H+limit:
-                arr.remove(obj)
+    def uobj(s,arr,d,c,r,lim=80):
+        for o in arr[:]:
+            o.update()
+            if o.rect().colliderect(s.p.hit): s.hurt(d(o) if callable(d) else d,c,r); arr.remove(o)
+            elif o.y>H+lim: arr.remove(o)
 
-    def update_effects(self):
-        self.explosions = [e for e in self.explosions if e.alive()]
-        for e in self.explosions: e.update()
+    def uex(s):
+        s.ex=[e for e in s.ex if e.alive()]
+        [e.update() for e in s.ex]
 
-    def update(self):
-        if self.state == "WON":
-            if not self.victory_played:
-                self.victory_played = True
-                play_sound(SND_VICTORY)
-                stop_music()
-            if self.win_anim_y < H//4: self.win_anim_y += 2
-            self.player.x += 2 if self.player.x < W//2 else -2 if self.player.x > W//2 else 0
-            target_y = self.win_anim_y + 150
-            self.player.y += 2 if self.player.y < target_y else -2 if self.player.y > target_y else 0
-            self.update_effects()
-            return
+    def update(s):
+        if s.state=="WON":
+            if not s.vp:
+                s.vp=1; ss(); ps(SND_VICTORY)
+            if s.winy<H//4: s.winy+=2
+            s.p.x += 2 if s.p.x<W//2 else -2 if s.p.x>W//2 else 0
+            ty=s.winy+150; s.p.y += 2 if s.p.y<ty else -2 if s.p.y>ty else 0
+            s.uex(); return
+        if s.state!="PLAYING": s.uex(); return
+        s.frame+=1; s.p.move(s.k); s.uboss(); s.spawn(); s.ubu(); s.ubbu()
+        s.uobj(s.en,35,(255,80,60),100,60); s.uobj(s.asd,lambda a:a.damage,(255,130,60),110,80); s.uex()
+        if not s.boss.active and s.frame%45==0: s.en.append(Enemy(s.esp))
+        if not s.boss.active and s.frame%90==0: s.asd.append(Asteroid())
 
-        if self.state != "PLAYING":
-            self.update_effects()
-            return
+    def ui(s):
+        pygame.draw.rect(screen,(20,20,28),(18,18,220,18),border_radius=6)
+        pygame.draw.rect(screen,RED,(18,18,int(220*s.p.hp/s.p.max_hp),18),border_radius=6)
+        pygame.draw.rect(screen,WHITE,(18,18,220,18),2,border_radius=6)
+        txt(f"HP {s.p.hp}/{s.p.max_hp}",fs,WHITE,24,16)
+        if s.state=="PLAYING": txt(f"SCORE: {s.score} | GOAL: 400",fs,WHITE,15,H-30)
 
-        self.frame += 1
-        self.player.move(self.keys)
-        self.update_boss()
-        self.spawn_player_bullets()
-        self.update_bullets()
-        self.update_boss_bullets()
-        self.update_objects(self.enemies, 35, (255,80,60), 100, 60)
-        self.update_objects(self.asteroids, lambda a: a.damage, (255,130,60), 110, 80)
-        self.update_effects()
-
-        if not self.boss.active and self.frame % 45 == 0: self.enemies.append(Enemy(self.enemy_sprite))
-        if not self.boss.active and self.frame % 90 == 0: self.asteroids.append(Asteroid())
-
-    def draw_ui(self):
-        pygame.draw.rect(screen, (20,20,28), (18,18,220,18), border_radius=6)
-        pygame.draw.rect(screen, RED, (18,18,int(220*self.player.hp/self.player.max_hp),18), border_radius=6)
-        pygame.draw.rect(screen, WHITE, (18,18,220,18), 2, border_radius=6)
-        draw_text(f"HP {self.player.hp}/{self.player.max_hp}", font_s, WHITE, 24, 16)
-        if self.state == "PLAYING":
-            draw_text(f"SCORE: {self.score} | GOAL: 400", font_s, WHITE, 15, H-30)
-
-    def draw(self):
-        self.bg.draw()
-
-        if self.state == "START":
-            draw_text("HIGH-LEVEL MISSION", font_b, RED, W//2, 90, center=True)
-            draw_text("FLY TO SPACE", font_m, CYAN, W//2, 160, center=True)
-            self.player.draw()
-            draw_text("[ SPACE ] TO TAKE OFF", font_m, YELLOW, W//2, H-120, center=True)
-            pygame.display.flip()
-            return
-
-        if self.state == "WON":
-            draw_iss(W//2, self.win_anim_y)
-            for ex in self.explosions: ex.draw()
-            self.player.draw()
-            if self.win_anim_y >= H//4:
-                draw_text("YOU WON", font_b, YELLOW, W//2, H//2+120, center=True)
-                draw_text("MISSION COMPLETE", font_m, WHITE, W//2, H//2+170, center=True)
-                draw_text("[ SPACE ] TO RETRY", font_s, (170,170,170), W//2, H-50, center=True)
-            self.draw_ui()
-            pygame.display.flip()
-            return
-
-        self.boss.draw()
-        for e in self.enemies: e.draw()
-        for a in self.asteroids: a.draw()
-
-        if self.state != "OVER":
-            for b in self.bullets:
-                pygame.draw.line(screen, YELLOW, (b[0],b[1]), (b[0],b[1]-25), 4)
-            for b in self.boss_bullets:
-                pygame.draw.circle(screen, PURPLE, (int(b[0]),int(b[1])), 8)
-                pygame.draw.circle(screen, WHITE, (int(b[0]),int(b[1])), 8, 1)
-            for ex in self.explosions: ex.draw()
-            self.player.draw()
+    def draw(s):
+        s.bg.draw()
+        if s.state=="START":
+            txt("HORSEWAR: THE UNKNOWN MYSTERY",fb,RED,W//2,90,1); txt("TRY YOUR BEST",fm,CYAN,W//2,160,1); s.p.draw()
+            txt("[ SPACE ] TO TAKE OFF",fm,YELLOW,W//2,H-120,1); pygame.display.flip(); return
+        if s.state=="WON":
+            iss(W//2,s.winy); [e.draw() for e in s.ex]; s.p.draw()
+            if s.winy>=H//4:
+                txt("YOU WON",fb,YELLOW,W//2,H//2+120,1); txt("MISSION COMPLETE",fm,WHITE,W//2,H//2+170,1); txt("[ SPACE ] TO RETRY",fs,(170,170,170),W//2,H-50,1)
+            s.ui(); pygame.display.flip(); return
+        s.boss.draw(); [e.draw() for e in s.en]; [a.draw() for a in s.asd]
+        if s.state!="OVER":
+            [pygame.draw.line(screen,YELLOW,(b[0],b[1]),(b[0],b[1]-25),4) for b in s.bu]
+            for b in s.bbu:
+                pygame.draw.circle(screen,PURPLE,(int(b[0]),int(b[1])),8)
+                pygame.draw.circle(screen,WHITE,(int(b[0]),int(b[1])),8,1)
+            [e.draw() for e in s.ex]; s.p.draw()
         else:
-            draw_text("MISSION FAILED", font_b, RED, W//2, H//2-20, center=True)
-            draw_text("[SPACE] TO RETRY", font_m, WHITE, W//2, H//2+40, center=True)
+            txt("MISSION FAILED",fb,RED,W//2,H//2-20,1); txt("[SPACE] TO RETRY",fm,WHITE,W//2,H//2+40,1)
+        s.ui(); pygame.display.flip()
 
-        self.draw_ui()
-        pygame.display.flip()
-
-SND_EXPLOSION = load_sound(EXPLOSION_WAV, 0.45)
-SND_GAME_OVER = load_sound(GAME_OVER_WAV, 0.45)
-SND_HIT       = load_sound(HIT_WAV, 0.35)
-SND_SHOOT     = load_sound(SHOOT_WAV, 0.18) or load_sound(HIT_WAV, 0.12)
-SND_VICTORY   = load_sound(VICTORY_WAV, 0.35) or load_sound(HIT_WAV, 0.20)
+SND_EXPLOSION=ls(EXPLO,.45)
+SND_GAME_OVER=ls(GOVER,.45)
+SND_SHOOT=ls(SHOOT,.18)
+SND_VICTORY=ls(VICTORY,.55) or ls(r"C:\Users\HAI\Downloads\victory.wav",.35) or ls(EXPLO,.2)
 
 def main():
-    game = Game()
-    while True:
+    g=Game()
+    while 1:
         clock.tick(FPS)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                stop_music(); pygame.quit(); sys.exit()
-            if event.type == pygame.KEYDOWN: game.keydown(event.key)
-            if event.type == pygame.KEYUP: game.keyup(event.key)
-        game.update()
-        game.draw()
+        for e in pygame.event.get():
+            if e.type==pygame.QUIT: ss(); sm(); pygame.quit(); sys.exit()
+            if e.type==pygame.KEYDOWN: g.kd(e.key)
+            if e.type==pygame.KEYUP: g.ku(e.key)
+        g.update(); g.draw()
 
-if __name__ == "__main__":
-    main()
+if __name__=="__main__": main()
