@@ -1,4 +1,4 @@
-# HORSEWAR: THE UNKNOWN MYSTERY
+#AERO BLASTER: HORSE OF DOOM
 import pygame, random, math, sys, os
 from pygame import SRCALPHA
 
@@ -8,7 +8,7 @@ if not pygame.mixer.get_init(): pygame.mixer.init()
 
 W,H,FPS=700,900,60
 screen=pygame.display.set_mode((W,H))
-pygame.display.set_caption("HORSEWAR: THE UNKNOWN MYSTERY")
+pygame.display.set_caption("AERO BLASTER: HORSE OF DOOM")
 clock=pygame.time.Clock()
 
 WHITE=(255,255,255); BLACK=(10,10,10); RED=(255,70,70); YELLOW=(255,220,80)
@@ -298,7 +298,7 @@ class Game:
     def draw(s):
         s.bg.draw()
         if s.state=="START":
-            txt("HORSEWAR: THE UNKNOWN MYSTERY",fb,RED,W//2,90,1); txt(" * Press ASDW to move * ",fm,CYAN,W//2,160,1); s.p.draw()
+            txt("AERO BLASTER: HORSE OF DOOM",fb,RED,W//2,90,1); txt(" * Press ASDW to move * ",fm,CYAN,W//2,160,1); s.p.draw()
             txt("[ SPACE ] TO TAKE OFF",fm,YELLOW,W//2,H-120,1); pygame.display.flip(); return
         if s.state=="WON":
             iss(W//2,s.winy); [e.draw() for e in s.ex]; s.p.draw()
