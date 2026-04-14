@@ -314,7 +314,7 @@ class Game:
     def draw(s):
         s.bg.draw()
         if s.state=="START":
-            txt("HORSEWAR: THE UNKNOWN MYSTERY",fb,RED,W//2,90,1); txt("TRY YOUR BEST",fm,CYAN,W//2,160,1); s.p.draw()
+            txt("HORSEWAR: THE UNKNOWN MYSTERY",fb,RED,W//2,90,1); txt(" * Press ASDW on the keyboard to move * ",fm,CYAN,W//2,160,1); s.p.draw()
             txt("[ SPACE ] TO TAKE OFF",fm,YELLOW,W//2,H-120,1); pygame.display.flip(); return
         if s.state=="WON":
             iss(W//2,s.winy); [e.draw() for e in s.ex]; s.p.draw()
@@ -329,14 +329,12 @@ class Game:
                 pygame.draw.circle(screen,WHITE,(int(b[0]),int(b[1])),8,1)
             [e.draw() for e in s.ex]; s.p.draw()
         else:
-            txt("MISSION FAILED",fb,RED,W//2,H//2-20,1); txt("[SPACE] TO RETRY",fm,WHITE,W//2,H//2+40,1)
+            txt("MISSION FAILED",fb,RED,W//2,H//2-20,1); txt("[SPACE] TO RETRY",fm,WHITE,W//2,H//2+40,1); txt(" PRESS ASDW TO MOVE",fm ,(170,170,170),W//2,H//2+80,1)
         s.ui(); pygame.display.flip()
-
 SND_EXPLOSION=ls(EXPLO,.45)
 SND_GAME_OVER=ls(GOVER,.45)
 SND_SHOOT=ls(SHOOT,.18)
 SND_VICTORY=ls(VICTORY,.55) or ls(r"C:\Users\HAI\Downloads\victory.wav",.35) or ls(EXPLO,.2)
-
 def main():
     g=Game()
     while 1:
@@ -346,5 +344,4 @@ def main():
             if e.type==pygame.KEYDOWN: g.kd(e.key)
             if e.type==pygame.KEYUP: g.ku(e.key)
         g.update(); g.draw()
-
 if __name__=="__main__": main()
