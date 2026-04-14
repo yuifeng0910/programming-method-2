@@ -24,7 +24,7 @@ ENEMY_IMG=r"c:\Users\HAI\Downloads\planebl.png"
 BOSS_IMG=r"c:\Users\HAI\Downloads\z7718593466873_0a142d28b5623bef36d76497091803ff.jpg"
 BGM=r"c:\Users\HAI\Downloads\background.wav (1).wav"
 BINTRO=r"c:\Users\HAI\Downloads\boss_intro.wav.wav"
-BBATTLE=r"c:\Users\HAI\Downloads\boss_battle.wav.wav"
+BBATTLE=r"c:\Users\HAI\Downloads\boss battle (1).wav"
 EXPLO=r"c:\Users\HAI\Downloads\explosion.wav.wav"
 GOVER=r"c:\Users\HAI\Downloads\game_over.wav.wav"
 SHOOT=r"C:\Users\HAI\Downloads\shoot.wav"
@@ -35,12 +35,10 @@ def ls(p,v=.5):
         if p and os.path.exists(p):
             s=pygame.mixer.Sound(p); s.set_volume(v); return s
     except: pass
-
 def ps(s):
     try:
         if s: s.play()
     except: pass
-
 def pm(p,l=-1,v=.4):
     try:
         if p and os.path.exists(p):
@@ -49,24 +47,19 @@ def pm(p,l=-1,v=.4):
             pygame.mixer.music.set_volume(v)
             pygame.mixer.music.play(l)
     except: pass
-
 def sm():
     try: pygame.mixer.music.stop()
     except: pass
-
 def ss():
     try: pygame.mixer.stop()
     except: pass
-
 def txt(t,f,c,x,y,ct=False):
     i=f.render(t,1,c)
     screen.blit(i,i.get_rect(center=(x,y)) if ct else (x,y))
-
 def img(p,s,a=True):
     i=pygame.image.load(p)
     i=i.convert_alpha() if a else i.convert()
     return pygame.transform.scale(i,s)
-
 def plane(size=(120,120),body=(40,40,40),can=(120,220,255)):
     sf=pygame.Surface(size,SRCALPHA); w,h=size; c=w//2
     pts=[(c,8),(c+20,32),(c+26,66),(c+12,108),(c-12,108),(c-26,66),(c-20,32)]
@@ -75,7 +68,6 @@ def plane(size=(120,120),body=(40,40,40),can=(120,220,255)):
     pygame.draw.polygon(sf,body,[(c+18,48),(w-8,78),(c+10,66)])
     pygame.draw.ellipse(sf,can,(c-8,28,16,26))
     return sf
-
 def asteroid_img(r):
     sf=pygame.Surface((r*2+8,r*2+8),SRCALPHA); c=r+4
     pts=[(c+math.cos(math.tau*i/12)*(r+random.randint(-6,6)),c+math.sin(math.tau*i/12)*(r+random.randint(-6,6))) for i in range(12)]
@@ -83,7 +75,6 @@ def asteroid_img(r):
     for _ in range(5):
         pygame.draw.circle(sf,B1,(random.randint(c-r//2,c+r//2),random.randint(c-r//2,c+r//2)),random.randint(4,max(5,r//3)))
     return sf
-
 def iss(x,y):
     g=pygame.Surface((620,300),SRCALPHA)
     pygame.draw.ellipse(g,(120,180,255,22),(40,110,540,80)); screen.blit(g,(x-310,y-150))
@@ -112,7 +103,6 @@ def iss(x,y):
     p=pygame.Rect(x-120,y-14,240,20)
     pygame.draw.rect(screen,(228,232,238),p,border_radius=3); pygame.draw.rect(screen,WHITE,p,1,border_radius=3)
     txt("ISS INTERNATIONAL SPACE STATION",fs,BLACK,x,y-4,1)
-
 class Bg:
     def __init__(s):
         s.st=[[random.randint(0,W),random.randint(0,H),random.randint(1,3)] for _ in range(140)]
@@ -131,7 +121,6 @@ class Bg:
             a[1]+=15
             if a[1]>H: a[0],a[1]=random.randint(0,W),-20
             pygame.draw.line(screen,(80,120,180),(a[0],a[1]),(a[0],a[1]+a[2]),1)
-
 class Explosion:
     def __init__(s,x,y,m=70,c=(255,120,50)): s.x,s.y,s.r,s.m,s.c=x,y,8,m,c
     def update(s): s.r+=4
@@ -139,7 +128,6 @@ class Explosion:
     def draw(s):
         pygame.draw.circle(screen,s.c,(int(s.x),int(s.y)),int(s.r))
         pygame.draw.circle(screen,WHITE,(int(s.x),int(s.y)),int(s.r),1)
-
 class Player:
     def __init__(s,sp):
         s.sp,s.x,s.y,s.v=sp,W//2,H-140,8
@@ -154,7 +142,6 @@ class Player:
         sh=pygame.Surface((90,35),SRCALPHA)
         pygame.draw.ellipse(sh,(0,0,0,110),(0,0,90,35))
         screen.blit(sh,(s.x-45,s.y+22)); screen.blit(s.sp,s.sp.get_rect(center=(s.x,s.y)))
-
 class Enemy:
     def __init__(s,sp): s.sp,s.x,s.y,s.hp,s.max_hp,s.v=sp,random.randint(80,W-80),-80,3,3,4
     def rect(s): return pygame.Rect(s.x-35,s.y-45,70,90)
@@ -163,7 +150,6 @@ class Enemy:
         screen.blit(s.sp,s.sp.get_rect(center=(s.x,s.y)))
         pygame.draw.rect(screen,BLACK,(s.x-25,s.y-52,50,5))
         pygame.draw.rect(screen,RED,(s.x-25,s.y-52,int(s.hp/s.max_hp*50),5))
-
 class Asteroid:
     def __init__(s):
         s.r=random.randint(20,40); s.base=asteroid_img(s.r); s.a=random.randint(0,360); s.rot=random.choice([-4,-3,-2,2,3,4])
@@ -173,7 +159,6 @@ class Asteroid:
     def update(s): s.y+=s.vy; s.x+=s.vx; s.a=(s.a+s.rot)%360
     def draw(s):
         i=pygame.transform.rotate(s.base,s.a); screen.blit(i,i.get_rect(center=(s.x,s.y)))
-
 class Boss:
     def __init__(s,sp=None): s.sp,s.x,s.y,s.hp,s.max_hp,s.active,s.dead,s.fr,s.ph=sp,W//2,-200,350,350,0,0,40,0
     def rect(s): return pygame.Rect(s.x-150,s.y-110,300,220)
@@ -187,7 +172,6 @@ class Boss:
         pygame.draw.rect(screen,WHITE,(90,18,W-180,18),2,border_radius=8)
         txt(f"BOSS: {s.hp}/{s.max_hp}",fs,WHITE,W//2,46,1)
         if s.sp: screen.blit(s.sp,s.sp.get_rect(center=(s.x,s.y)))
-
 class Game:
     def __init__(s):
         try: s.psp=img(PLAYER_IMG,(120,120),1)
@@ -314,12 +298,12 @@ class Game:
     def draw(s):
         s.bg.draw()
         if s.state=="START":
-            txt("HORSEWAR: THE UNKNOWN MYSTERY",fb,RED,W//2,90,1); txt(" * Press ASDW on the keyboard to move * ",fm,CYAN,W//2,160,1); s.p.draw()
+            txt("HORSEWAR: THE UNKNOWN MYSTERY",fb,RED,W//2,90,1); txt(" * Press ASDW to move * ",fm,CYAN,W//2,160,1); s.p.draw()
             txt("[ SPACE ] TO TAKE OFF",fm,YELLOW,W//2,H-120,1); pygame.display.flip(); return
         if s.state=="WON":
             iss(W//2,s.winy); [e.draw() for e in s.ex]; s.p.draw()
             if s.winy>=H//4:
-                txt("YOU WON",fb,YELLOW,W//2,H//2+120,1); txt("MISSION COMPLETE",fm,WHITE,W//2,H//2+170,1); txt("[ SPACE ] TO RETRY",fs,(170,170,170),W//2,H-50,1)
+                txt("YOU WIN",fb,YELLOW,W//2,H//2+120,1); txt("MISSION COMPLETE",fm,WHITE,W//2,H//2+170,1); txt("[ SPACE ] TO RETRY",fs,(170,170,170),W//2,H-50,1)
             s.ui(); pygame.display.flip(); return
         s.boss.draw(); [e.draw() for e in s.en]; [a.draw() for a in s.asd]
         if s.state!="OVER":
