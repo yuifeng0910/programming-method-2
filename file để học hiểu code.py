@@ -1,157 +1,361 @@
-import tkinter as tk, random, json, os # // Khai báo thư viện giao diện, ngẫu nhiên, dữ liệu JSON và hệ thống
-from collections import namedtuple # // Hỗ trợ tạo cấu trúc dữ liệu bảng màu cố định
+import pygame, random, math, sys, os
+from pygame import SRCALPHA
 
-# --- THIẾT LẬP HẰNG SỐ ---
-W, H, FPS = 540, 780, 60            # // Chiều rộng, cao màn hình và tốc độ 60 khung hình/giây
-ROAD_L, ROAD_R = 85, 455            # // Giới hạn biên trái và biên phải của mặt đường nhựa
-LANE_W = (ROAD_R - ROAD_L) / 3      # // Độ rộng mỗi làn đường (chia mặt đường làm 3 làn)
-CAR_W, CAR_H = 58, 106              # // Kích thước vật lý của xe ô tô
-SAVE_FILE = "high_score.json"       # // Tên file dùng để lưu trữ điểm kỷ lục
+# --- CẤU HÌNH ÂM THANH SỚM ---
+# Khởi tạo mixer trước để giảm độ trễ (latency) khi phát âm thanh
+pygame.mixer.pre_init(44100,-16,2,512)
+pygame.init()
+if not pygame.mixer.get_init(): pygame.mixer.init()
 
-# --- QUẢN LÝ MÀU SẮC ---
-Col = namedtuple('Col', ['grass', 'road', 'edge', 'lane', 'p_car', 'o_car', 'bar', 'oil', 'tree_t', 'tree_l'])
-c = Col("#567d46", "#333333", "#ffffff", "white", "#ffcc00", 
-        ["#e63946", "#a8dadc"], "#e63946", "black", "#5d2906", "#0b5345") # // Gán bảng màu Hex cho vật thể
+# --- THÔNG SỐ CƠ BẢN ---
+W,H,FPS=700,900,60 # Chiều rộng, chiều cao màn hình và khung hình trên giây
+screen=pygame.display.set_mode((W,H)) # Tạo cửa sổ game
+pygame.display.set_caption("HORSEWAR: THE UNKNOWN MYSTERY") # Tiêu đề game
+clock=pygame.time.Clock() # Bộ đếm thời gian để duy trì FPS
 
-class RacingGame:
-    def __init__(self, r): # // Hàm khởi tạo hệ thống khi chạy game
-        self.r = r
-        self.r.title("Classic Racer")
-        # // Tạo Canvas để vẽ đồ họa (màu nền trời xanh)
-        self.can = tk.Canvas(r, width=W, height=H, bg="#87CEEB", highlightthickness=0)
-        self.can.pack()
-        
-        self.h_sc = self.load_sc()      # // Tải điểm cao nhất từ file JSON
-        self.r.bind("<KeyPress>", self.kd)    # // Lắng nghe sự kiện nhấn phím xuống
-        self.r.bind("<KeyRelease>", self.ku)  # // Lắng nghe sự kiện thả phím ra
-        self.reset()                    # // Thiết lập các thông số khởi đầu
-        self.loop()                     # // Bắt đầu vòng lặp cập nhật liên tục
+# --- BẢNG MÀU RGB ---
+WHITE=(255,255,255); BLACK=(10,10,10); RED=(255,70,70); YELLOW=(255,220,80)
+CYAN=(100,220,255); PURPLE=(220,100,255); SILVER=(205,210,220); DARK=(120,130,145)
+GREY=(70,78,96); B1=(95,70,55); B2=(130,95,70); B3=(165,125,92)
 
-    def load_sc(self): # // Hàm xử lý file để tải điểm kỷ lục
-        if os.path.exists(SAVE_FILE):
-            try:
-                with open(SAVE_FILE, "r") as f: return json.load(f).get("score", 0)
-            except: return 0 # // Trả về 0 nếu file bị lỗi cấu trúc
-        return 0
+# --- KHỞI TẠO FONT CHỮ ---
+fs=pygame.font.SysFont("monospace",18,True) # Font nhỏ (hệ thống)
+fm=pygame.font.SysFont("arial",28,True)     # Font vừa
+fb=pygame.font.SysFont("arial",44,True)     # Font lớn cho tiêu đề
 
-    def reset(self): # // Hàm thiết lập lại toàn bộ trạng thái khi chơi mới
-        self.px, self.py = W//2-CAR_W//2, H-150   # // Đặt xe người chơi ở giữa làn cuối đường
-        self.obs, self.trees, self.exps = [], [], [] # // Xóa danh sách vật cản, cây và nổ
-        self.sc, self.spd, self.fc, self.r_off = 0, 7, 0, 0 # // Reset điểm, tốc độ và bộ đếm
-        self.lp = self.rp = False       # // Reset trạng thái nhấn phím
-        self.st = "play"                # // Trạng thái: "play" (đang chơi) hoặc "over" (thua)
+# --- ĐƯỜNG DẪN TÀI NGUYÊN (Ảnh & Âm thanh) ---
+PLAYER_IMG=r"C:\Users\HAI\Downloads\pl2.png"
+ENEMY_IMG=r"c:\Users\HAI\Downloads\planebl.png"
+BOSS_IMG=r"c:\Users\HAI\Downloads\z7718593466873_0a142d28b5623bef36d76497091803ff.jpg"
+BGM=r"c:\Users\HAI\Downloads\background.wav (1).wav"
+BINTRO=r"c:\Users\HAI\Downloads\boss_intro.wav.wav"
+BBATTLE=r"c:\Users\HAI\Downloads\boss_battle.wav.wav"
+EXPLO=r"c:\Users\HAI\Downloads\explosion.wav.wav"
+GOVER=r"c:\Users\HAI\Downloads\game_over.wav.wav"
+SHOOT=r"C:\Users\HAI\Downloads\shoot.wav"
+VICTORY=r"c:\Users\HAI\Downloads\winning.wav.wav"
 
-    def kd(self, e): # // Xử lý logic khi nhấn phím (Key Down)
-        k = e.keysym.lower()
-        if k in ["left", "a"]: self.lp = True   # // Di chuyển trái
-        if k in ["right", "d"]: self.rp = True  # // Di chuyển phải
-        # // Nếu đã thua, cho phép nhấn R hoặc Space để chơi lại
-        if self.st == "over" and k in ["r", "space"]: self.reset()
+# --- HÀM HỖ TRỢ (HELPER FUNCTIONS) ---
+def ls(p,v=.5): # Load Sound: Tải âm thanh và chỉnh âm lượng
+    try:
+        if p and os.path.exists(p):
+            s=pygame.mixer.Sound(p); s.set_volume(v); return s
+    except: pass
 
-    def ku(self, e): # // Xử lý logic khi thả phím (Key Up)
-        k = e.keysym.lower()
-        if k in ["left", "a"]: self.lp = False
-        if k in ["right", "d"]: self.rp = False
+def ps(s): # Play Sound: Phát hiệu ứng âm thanh (tiếng nổ, bắn...)
+    try:
+        if s: s.play()
+    except: pass
 
-    def draw_car(self, x, y, col): # // Hàm vẽ ô tô (bao gồm bóng xe, thân xe, kính và đèn)
-        self.can.create_oval(x+5, y+CAR_H-15, x+CAR_W-5, y+CAR_H+5, fill="#222", outline="") # // Bóng
-        self.can.create_rectangle(x+8, y+10, x+CAR_W-8, y+CAR_H-10, fill=col, outline="black", width=2) # // Thân
-        for gy in [y+25, y+55]: # // Cửa kính xe
-            self.can.create_rectangle(x+15, gy, x+CAR_W-15, gy+15, fill="#dff3ff", outline="black")
-        for lx in [x+10, x+CAR_W-18]: # // Đèn pha
-            self.can.create_oval(lx, y+5, lx+8, y+12, fill="yellow", outline="")
+def pm(p,l=-1,v=.4): # Play Music: Phát nhạc nền (có lặp lại)
+    try:
+        if p and os.path.exists(p):
+            pygame.mixer.music.stop()
+            pygame.mixer.music.load(p)
+            pygame.mixer.music.set_volume(v)
+            pygame.mixer.music.play(l)
+    except: pass
 
-    def up(self): # // HÀM LOGIC CHÍNH: Cập nhật vị trí và tính va chạm
-        if self.st != "play": return # // Nếu thua thì dừng mọi logic di chuyển
-        
-        self.r_off = (self.r_off + self.spd) % 80 # // Tính độ trượt để tạo cảm giác đường đang chạy
-        self.fc += 1 # // Tăng bộ đếm khung hình (frame counter)
-        
-        # // Cập nhật vị trí người chơi và chặn không cho ra khỏi mặt đường nhựa
-        if self.lp: self.px = max(ROAD_L+10, self.px - 10)
-        if self.rp: self.px = min(ROAD_R-CAR_W-10, self.px + 10)
-        
-        # // Tạo cây ở lề đường mỗi 25 khung hình
-        if self.fc % 25 == 0:
-            self.trees.append([random.choice([10, W-70]), -120])
-            
-        # // Tạo vật cản ngẫu nhiên mỗi 45 khung hình
-        if self.fc % 45 == 0:
-            t, lx = random.choice(["c", "c", "b", "o"]), ROAD_L + random.randint(0, 2)*LANE_W
-            if t=="c": # // Xe địch
-                self.obs.append({"t":t,"x":lx+(LANE_W-CAR_W)//2,"y":-120,"w":CAR_W,"h":CAR_H,"c":random.choice(c.o_car)})
-            elif t=="b": # // Rào chắn
-                self.obs.append({"t":t,"x":lx+(LANE_W-70)//2,"y":-50,"w":70,"h":30})
-            elif t=="o": # // Vũng dầu
-                self.obs.append({"t":t,"x":lx+(LANE_W-60)//2,"y":-50,"w":60,"h":35})
+def sm(): # Stop Music: Dừng nhạc nền
+    try: pygame.mixer.music.stop()
+    except: pass
 
-        # // Cập nhật vị trí cây trôi xuống
-        self.trees = [[x, y+self.spd] for x, y in self.trees if y < H]
-        
-        for o in self.obs[:]: # // Duyệt danh sách vật cản
-            o["y"] += self.spd # // Vật cản trôi xuống theo tốc độ game
-            # // Thuật toán kiểm tra va chạm AABB (hình chữ nhật đè nhau)
-            if self.px < o["x"]+o["w"]-5 and self.px+CAR_W-5 > o["x"] and \
-               self.py < o["y"]+o["h"]-5 and self.py+CAR_H-5 > o["y"]:
-                self.st = "over" # // Chuyển sang trạng thái thua
-                self.exps.append({"x":self.px+CAR_W//2,"y":self.py+CAR_H//2,"f":0}) # // Tạo hiệu ứng nổ
-            elif o["y"] > H: # // Nếu vượt qua vật cản thành công
-                self.obs.remove(o)
-                self.sc += 1 # // Cộng 1 điểm
-                if self.sc > self.h_sc: self.h_sc = self.sc # // Cập nhật kỷ lục mới
-                # // Cứ mỗi 10 điểm thì tăng tốc độ game thêm 0.5 (tối đa 16)
-                if self.sc % 10 == 0: self.spd = min(16, self.spd + 0.5)
+def ss(): # Stop Sounds: Dừng tất cả hiệu ứng âm thanh đang phát
+    try: pygame.mixer.stop()
+    except: pass
 
-    def draw(self): # // HÀM ĐỒ HỌA: Vẽ mọi thứ lên màn hình
-        self.can.delete("all") # // Xóa khung hình cũ
-        self.can.create_rectangle(0, 0, W, H, fill=c.grass) # // Vẽ cỏ
-        self.can.create_rectangle(ROAD_L, 0, ROAD_R, H, fill=c.road, outline="") # // Vẽ đường nhựa
-        
-        # // Vẽ sọc đỏ/trắng ở hai bên lề đường
-        for y in range(int(self.r_off)-80, H, 40):
-            col = "red" if (y//40)%2==0 else "white"
-            for rx in [ROAD_L-10, ROAD_R]:
-                self.can.create_rectangle(rx, y, rx+10, y+40, fill=col, outline="")
-            
-        # // Vẽ vạch phân làn (vạch đứt)
-        for i in range(1,3):
-            lx = ROAD_L+i*LANE_W
-            for y in range(int(self.r_off)-80, H, 80):
-                self.can.create_line(lx, y, lx, y+40, fill=c.lane, width=2)
-            
-        for x, y in self.trees: # // Vẽ cây xanh
-            self.can.create_rectangle(x+22, y+60, x+28, y+95, fill=c.tree_t) # // Thân cây
-            for oy, r in [(y+55,25), (y+40,18), (y+15,15)]: # // Tán lá
-                self.can.create_oval(x+25-r, oy-r, x+25+r, oy+r, fill=c.tree_l, outline="#083e2f")
-            
-        for o in self.obs: # // Vẽ vật cản (xe, rào chắn, dầu)
-            if o["t"]=="c": self.draw_car(o["x"], o["y"], o["c"])
-            elif o["t"]=="b":
-                self.can.create_rectangle(o["x"], o["y"], o["x"]+o["w"], o["y"]+o["h"], fill="white", outline="black")
-                for sx in range(0, o["w"], 15): # // Vẽ họa tiết sọc trên rào chắn
-                    self.can.create_polygon(o["x"]+sx, o["y"], o["x"]+sx+10, o["y"], o["x"]+sx, o["y"]+o["h"], o["x"]+sx-10, o["y"]+o["h"], fill=c.bar, outline="")
-            elif o["t"]=="o": # // Vẽ vũng dầu
-                self.can.create_oval(o["x"], o["y"], o["x"]+o["w"], o["y"]+o["h"], fill="#111")
-                
-        if self.st == "play": self.draw_car(self.px, self.py, c.p_car) # // Vẽ xe người chơi
-        
-        for ex in self.exps[:]: # // Vẽ hiệu ứng nổ (vòng tròn to dần)
-            ex["f"] += 1; r = ex["f"]*7
-            if ex["f"] > 15: self.exps.remove(ex)
-            else: self.can.create_oval(ex["x"]-r, ex["y"]-r, ex["x"]+r, ex["y"]+r, fill="#ff4500", outline="yellow", width=2)
-            
-        # // Hiển thị bảng điểm
-        self.can.create_text(25, 25, text=f"SCORE: {self.sc}  BEST: {self.h_sc}", fill="white", anchor="nw", font=("Arial", 14, "bold"))
-        if self.st == "over": # // Hiển thị thông báo khi thua
-            self.can.create_text(W//2, H//2, text="GAME OVER\nPress R or Space", fill="red", font=("Arial", 30, "bold"), justify="center")
+def txt(t,f,c,x,y,ct=False): # Hàm vẽ chữ lên màn hình
+    i=f.render(t,1,c) # Tạo surface chữ
+    screen.blit(i,i.get_rect(center=(x,y)) if ct else (x,y)) # Vẽ lên màn hình (ct=True thì căn giữa)
 
-    def loop(self): # // Vòng lặp chính của trò chơi (Game Loop)
-        self.up()   # // Cập nhật dữ liệu
-        self.draw() # // Vẽ lại màn hình
-        self.r.after(1000//FPS, self.loop) # // Chờ 1/60 giây rồi lặp lại (tạo 60 FPS)
+def img(p,s,a=True): # Hàm tải và scale ảnh
+    i=pygame.image.load(p)
+    i=i.convert_alpha() if a else i.convert() # Tối ưu hóa ảnh (có/không có độ trong suốt)
+    return pygame.transform.scale(i,s) # Trả về ảnh đã đổi kích thước
 
-if __name__ == "__main__":
-    rt = tk.Tk()
-    rt.resizable(0,0) # // Khóa không cho kéo giãn cửa sổ
-    RacingGame(rt) # // Chạy trò chơi
-    rt.mainloop() # // giữ cửa sổ luôn mở
+# --- HÀM VẼ ĐỒ HỌA BẰNG CODE (Nếu không có ảnh) ---
+def plane(size=(120,120),body=(40,40,40),can=(120,220,255)): # Vẽ phi thuyền bằng đa giác
+    sf=pygame.Surface(size,SRCALPHA); w,h=size; c=w//2
+    pts=[(c,8),(c+20,32),(c+26,66),(c+12,108),(c-12,108),(c-26,66),(c-20,32)] # Các đỉnh thân máy bay
+    pygame.draw.polygon(sf,body,pts); pygame.draw.polygon(sf,WHITE,pts,2) # Vẽ thân và viền
+    pygame.draw.polygon(sf,body,[(c-18,48),(8,78),(c-10,66)]) # Cánh trái
+    pygame.draw.polygon(sf,body,[(c+18,48),(w-8,78),(c+10,66)]) # Cánh phải
+    pygame.draw.ellipse(sf,can,(c-8,28,16,26)) # Buồng lái (Cockpit)
+    return sf
+
+def asteroid_img(r): # Tạo hình ảnh thiên thạch ngẫu nhiên
+    sf=pygame.Surface((r*2+8,r*2+8),SRCALPHA); c=r+4
+    # Tạo danh sách điểm đa giác gồ ghề ngẫu nhiên xung quanh tâm
+    pts=[(c+math.cos(math.tau*i/12)*(r+random.randint(-6,6)),c+math.sin(math.tau*i/12)*(r+random.randint(-6,6))) for i in range(12)]
+    pygame.draw.polygon(sf,B2,pts); pygame.draw.polygon(sf,B3,pts,3) # Vẽ khối đá
+    for _ in range(5): # Vẽ các hố (crater) trên thiên thạch
+        pygame.draw.circle(sf,B1,(random.randint(c-r//2,c+r//2),random.randint(c-r//2,c+r//2)),random.randint(4,max(5,r//3)))
+    return sf
+
+def iss(x,y): # Vẽ trạm vũ trụ ISS (Phần thưởng khi thắng)
+    g=pygame.Surface((620,300),SRCALPHA)
+    pygame.draw.ellipse(g,(120,180,255,22),(40,110,540,80)); screen.blit(g,(x-310,y-150)) # Hiệu ứng hào quang
+    pygame.draw.line(screen,WHITE,(x-180,y),(x+180,y),4) # Trục chính
+    # ... các chi tiết vẽ tấm pin năng lượng mặt trời và mô-đun ...
+    for i in range(-150,151,30):
+        pygame.draw.line(screen,DARK,(x+i,y-10),(x+i+15,y+10),2)
+        pygame.draw.line(screen,DARK,(x+i,y+10),(x+i+15,y-10),2)
+    # (Đoạn này vẽ cấu trúc phức tạp của trạm ISS bằng các hàm hình học)
+    txt("ISS INTERNATIONAL SPACE STATION",fs,BLACK,x,y-4,1)
+
+# --- CÁC LỚP ĐỐI TƯỢNG (CLASSES) ---
+class Bg: # Quản lý nền trời sao
+    def __init__(s):
+        s.st=[[random.randint(0,W),random.randint(0,H),random.randint(1,3)] for _ in range(140)] # Danh sách sao tĩnh
+        s.li=[[random.randint(0,W),random.randint(0,H),random.randint(10,24)] for _ in range(45)] # Danh sách vệt sáng
+    def draw(s):
+        # Vẽ gradient nền từ trên xuống dưới
+        t,m,b=(6,8,20),(18,26,46),(8,12,26)
+        for y in range(H):
+            k=y/(H//2) if y<H//2 else (y-H//2)/(H//2)
+            c=tuple(int(t[i]+(m[i]-t[i])*k) if y<H//2 else int(m[i]+(b[i]-m[i])*k) for i in range(3))
+            pygame.draw.line(screen,c,(0,y),(W,y))
+        # Cập nhật và vẽ sao rơi
+        for a in s.st:
+            a[1]+=a[2]
+            if a[1]>H: a[0],a[1]=random.randint(0,W),0
+            pygame.draw.circle(screen,(220,220,240),(a[0],a[1]),max(1,a[2]-1))
+        # Cập nhật và vẽ vệt sáng tốc độ cao
+        for a in s.li:
+            a[1]+=15
+            if a[1]>H: a[0],a[1]=random.randint(0,W),-20
+            pygame.draw.line(screen,(80,120,180),(a[0],a[1]),(a[0],a[1]+a[2]),1)
+
+class Explosion: # Hiệu ứng vụ nổ hình tròn giãn nở
+    def __init__(s,x,y,m=70,c=(255,120,50)): s.x,s.y,s.r,s.m,s.c=x,y,8,m,c # m là bán kính tối đa
+    def update(s): s.r+=4 # Tăng bán kính theo thời gian
+    def alive(s): return s.r<=s.m # Còn sống nếu chưa đạt kích thước tối đa
+    def draw(s):
+        pygame.draw.circle(screen,s.c,(int(s.x),int(s.y)),int(s.r))
+        pygame.draw.circle(screen,WHITE,(int(s.x),int(s.y)),int(s.r),1)
+
+class Player: # Lớp người chơi
+    def __init__(s,sp):
+        s.sp,s.x,s.y,s.v=sp,W//2,H-140,8 # sp là ảnh phi thuyền, v là vận tốc
+        s.hp=s.max_hp=100; s.hit=pygame.Rect(s.x-35,s.y-45,70,90) # Máu và khung va chạm
+    def move(s,k): # Xử lý di chuyển dựa trên phím bấm
+        if k["left"]: s.x-=s.v
+        if k["right"]: s.x+=s.v
+        if k["up"]: s.y-=s.v
+        if k["down"]: s.y+=s.v
+        # Giữ phi thuyền không bay ra khỏi màn hình
+        s.x=max(60,min(W-60,s.x)); s.y=max(80,min(H-80,s.y))
+        s.hit=pygame.Rect(s.x-35,s.y-45,70,90) # Cập nhật vị trí khung va chạm
+    def draw(s):
+        sh=pygame.Surface((90,35),SRCALPHA) # Vẽ bóng đổ dưới phi thuyền
+        pygame.draw.ellipse(sh,(0,0,0,110),(0,0,90,35))
+        screen.blit(sh,(s.x-45,s.y+22)); screen.blit(s.sp,s.sp.get_rect(center=(s.x,s.y)))
+
+class Enemy: # Lớp kẻ địch thông thường
+    def __init__(s,sp): s.sp,s.x,s.y,s.hp,s.max_hp,s.v=sp,random.randint(80,W-80),-80,3,3,4
+    def rect(s): return pygame.Rect(s.x-35,s.y-45,70,90) # Trả về khung va chạm
+    def update(s): s.y+=s.v # Bay thẳng xuống
+    def draw(s):
+        screen.blit(s.sp,s.sp.get_rect(center=(s.x,s.y)))
+        # Vẽ thanh máu nhỏ trên đầu địch
+        pygame.draw.rect(screen,BLACK,(s.x-25,s.y-52,50,5))
+        pygame.draw.rect(screen,RED,(s.x-25,s.y-52,int(s.hp/s.max_hp*50),5))
+
+class Asteroid: # Lớp thiên thạch (vật cản)
+    def __init__(s):
+        s.r=random.randint(20,40); s.base=asteroid_img(s.r) # Tạo hình ảnh ngẫu nhiên
+        s.a=random.randint(0,360); s.rot=random.choice([-4,-3,-2,2,3,4]) # Góc xoay và tốc độ xoay
+        s.x=random.randint(s.r+20,W-s.r-20); s.y=-random.randint(60,220)
+        s.vy=random.uniform(3.5,6.5); s.vx=random.uniform(-1.2,1.2) # Vận tốc rơi
+        s.hp=s.max_hp=2 if s.r<30 else 3; s.damage=20 if s.r<30 else 35
+    def rect(s): return pygame.Rect(s.x-s.r,s.y-s.r,s.r*2,s.r*2)
+    def update(s): s.y+=s.vy; s.x+=s.vx; s.a=(s.a+s.rot)%360 # Cập nhật vị trí và xoay
+    def draw(s): # Vẽ thiên thạch đã được xoay
+        i=pygame.transform.rotate(s.base,s.a); screen.blit(i,i.get_rect(center=(s.x,s.y)))
+
+class Boss: # Lớp Trùm (Boss)
+    def __init__(s,sp=None): s.sp,s.x,s.y,s.hp,s.max_hp,s.active,s.dead,s.fr,s.ph=sp,W//2,-200,350,350,0,0,40,0
+    def rect(s): return pygame.Rect(s.x-150,s.y-110,300,220)
+    def update(s):
+        if s.y<145: s.y+=1.4 # Boss từ từ bay xuống vị trí chiến đấu
+        s.ph+=1; s.x+=math.sin(s.ph*0.03)*1.1 # Boss bay lượn theo hình sin
+    def draw(s):
+        if not s.active or s.dead: return
+        # Vẽ thanh máu khổng lồ của Boss ở phía trên màn hình
+        pygame.draw.rect(screen,(25,25,30),(90,18,W-180,18),border_radius=8)
+        pygame.draw.rect(screen,RED,(90,18,int((s.hp/s.max_hp)*(W-180)),18),border_radius=8)
+        pygame.draw.rect(screen,WHITE,(90,18,W-180,18),2,border_radius=8)
+        txt(f"BOSS: {s.hp}/{s.max_hp}",fs,WHITE,W//2,46,1)
+        if s.sp: screen.blit(s.sp,s.sp.get_rect(center=(s.x,s.y)))
+
+class Game: # Bộ não quản lý toàn bộ trò chơi
+    def __init__(s):
+        # Tải ảnh, nếu lỗi thì dùng hàm vẽ thủ công bằng code
+        try: s.psp=img(PLAYER_IMG,(120,120),1)
+        except: s.psp=plane((120,120),(35,35,35),CYAN)
+        try: s.esp=img(ENEMY_IMG,(120,120),1)
+        except: s.esp=plane((120,120),(150,25,25),(255,180,180))
+        try: s.bsp=img(BOSS_IMG,(300,220),0)
+        except: s.bsp=None
+        s.bg=Bg(); s.reset()
+
+    def reset(s): # Khởi động lại các thông số game
+        ss(); sm() # Dừng âm thanh cũ
+        s.state="START"; s.p=Player(s.psp); s.en=[]; s.asd=[]; s.bu=[]; s.bbu=[]; s.ex=[]; s.k={"left":0,"right":0,"up":0,"down":0}
+        s.score=s.frame=0; s.rate=14; s.winy=-220; s.boss=Boss(s.bsp); s.vp=s.ip=s.bp=0
+
+    def kd(s,key): # Xử lý nhấn phím (Key Down)
+        if key in (pygame.K_LEFT,pygame.K_a): s.k["left"]=1
+        if key in (pygame.K_RIGHT,pygame.K_d): s.k["right"]=1
+        if key in (pygame.K_UP,pygame.K_w): s.k["up"]=1
+        if key in (pygame.K_DOWN,pygame.K_s): s.k["down"]=1
+        # Bắt đầu game khi nhấn Space
+        if s.state in ("START","OVER","WON") and key==pygame.K_SPACE:
+            ss(); sm(); s.reset(); s.state="PLAYING"; pm(BGM,-1,.30)
+
+    def ku(s,key): # Xử lý thả phím (Key Up)
+        if key in (pygame.K_LEFT,pygame.K_a): s.k["left"]=0
+        if key in (pygame.K_RIGHT,pygame.K_d): s.k["right"]=0
+        if key in (pygame.K_UP,pygame.K_w): s.k["up"]=0
+        if key in (pygame.K_DOWN,pygame.K_s): s.k["down"]=0
+
+    def boom(s,x,y,c=(255,120,50),m=70): # Tạo một vụ nổ tại vị trí x,y
+        s.ex.append(Explosion(x,y,m,c)); ps(SND_EXPLOSION)
+
+    def over(s): # Xử lý khi thua cuộc
+        if s.state!="OVER":
+            ss(); sm(); s.state="OVER"; s.bu.clear(); s.bbu.clear(); ps(SND_GAME_OVER)
+
+    def hurt(s,d,c=(255,80,60),r=80): # Xử lý khi người chơi bị trúng đòn
+        s.p.hp=max(0,s.p.hp-d); s.boom(s.p.x,s.p.y,c,r)
+        if s.p.hp<=0: s.over()
+
+    def spawn(s): # Cơ chế bắn đạn của người chơi
+        r=max(5,s.rate-s.score//25) # Tốc độ bắn tăng dần theo điểm số
+        if s.frame%r: return
+        # Nâng cấp đạn dựa trên điểm (1 tia -> 2 tia -> 3 tia)
+        c=3 if s.score>=300 else 2 if s.score>=150 else 1
+        s.bu += ([[s.p.x,s.p.y-44]] if c==1 else [[s.p.x-18,s.p.y-28],[s.p.x+18,s.p.y-28]] if c==2 else [[s.p.x,s.p.y-48],[s.p.x-32,s.p.y-12],[s.p.x+32,s.p.y-12]])
+        ps(SND_SHOOT)
+
+    def uboss(s): # Cập nhật logic của Boss
+        if s.score>=400 and not s.boss.active: # Khi đạt 400 điểm, Boss xuất hiện
+            ss(); sm(); s.boss.active=1; s.en.clear(); s.asd.clear()
+            if not s.ip: s.ip=1; pm(BINTRO,0,.42) # Phát nhạc chào sân Boss
+        if s.boss.active and not s.boss.dead:
+            s.boss.update()
+            if s.boss.y>=145 and not s.bp: # Khi Boss vào đúng vị trí thì đổi nhạc chiến đấu
+                ss(); sm(); s.bp=1; pm(BBATTLE,-1,.34)
+            if s.frame%s.boss.fr==0: # Boss bắn đạn theo vòng tròn/hình quạt
+                for _ in range(7):
+                    a=random.uniform(0.7,2.4); sp=random.uniform(5,8)
+                    s.bbu.append([s.boss.x,s.boss.y+70,math.cos(a)*sp,math.sin(a)*sp])
+
+    def hit(s,arr,x,y): # Kiểm tra xem một điểm (x,y) có chạm vào đối tượng nào trong danh sách không
+        for o in arr:
+            if o.rect().collidepoint(x,y): return o
+
+    def ubu(s): # Cập nhật đạn của người chơi (Player Bullets)
+        keep=[]
+        for b in s.bu:
+            b[1]-=16; used=0
+            # Kiểm tra đạn bắn trúng Boss
+            if s.boss.active and not s.boss.dead and s.boss.rect().collidepoint(b[0],b[1]):
+                s.boss.hp=max(0,s.boss.hp-1); used=1
+                if s.boss.hp<=0: # Boss chết
+                    ss(); sm(); s.boss.dead=1; s.bbu.clear(); s.bu.clear(); s.en.clear(); s.asd.clear(); s.boom(s.boss.x,s.boss.y,(255,160,50),300); s.state="WON"
+            # Kiểm tra đạn bắn trúng Địch
+            if not used:
+                e=s.hit(s.en,b[0],b[1])
+                if e:
+                    e.hp-=1; used=1
+                    if e.hp<=0: s.boom(e.x,e.y,(241,196,15),90); s.score+=20; s.en.remove(e)
+            # Kiểm tra đạn bắn trúng Thiên thạch
+            if not used:
+                a=s.hit(s.asd,b[0],b[1])
+                if a:
+                    a.hp-=1; used=1
+                    if a.hp<=0: s.boom(a.x,a.y,(255,170,70),80); s.score+=10; s.asd.remove(a)
+            if not used and b[1]>-50: keep.append(b) # Giữ đạn nếu chưa trúng gì và chưa bay khỏi màn hình
+        s.bu=keep
+
+    def ubbu(s): # Cập nhật đạn của Boss (Boss Bullets)
+        keep=[]
+        for b in s.bbu:
+            b[0]+=b[2]; b[1]+=b[3]
+            if s.p.hit.collidepoint(b[0],b[1]): s.hurt(20) # Người chơi trúng đạn Boss bị trừ 20 HP
+            elif -100<b[1]<H+20 and 0<b[0]<W: keep.append(b)
+        s.bbu=keep
+
+    def uobj(s,arr,d,c,r,lim=80): # Hàm dùng chung để cập nhật Địch và Thiên thạch
+        for o in arr[:]:
+            o.update()
+            # Nếu vật thể va chạm trực tiếp với phi thuyền người chơi
+            if o.rect().colliderect(s.p.hit): s.hurt(d(o) if callable(d) else d,c,r); arr.remove(o)
+            elif o.y>H+lim: arr.remove(o) # Xóa nếu bay khỏi màn hình
+
+    def uex(s): # Cập nhật danh sách vụ nổ
+        s.ex=[e for e in s.ex if e.alive()]
+        [e.update() for e in s.ex]
+
+    def update(s): # Tổng hợp logic cập nhật game mỗi khung hình
+        if s.state=="WON": # Chế độ thắng: Phi thuyền tự bay vào trạm ISS
+            if not s.vp: s.vp=1; ss(); ps(SND_VICTORY)
+            if s.winy<H//4: s.winy+=2
+            s.p.x += 2 if s.p.x<W//2 else -2 if s.p.x>W//2 else 0
+            ty=s.winy+150; s.p.y += 2 if s.p.y<ty else -2 if s.p.y>ty else 0
+            s.uex(); return
+        if s.state!="PLAYING": s.uex(); return # Nếu đang ở menu hoặc thua thì chỉ cập nhật hiệu ứng nổ
+        s.frame+=1; s.p.move(s.k); s.uboss(); s.spawn(); s.ubu(); s.ubbu()
+        s.uobj(s.en,35,(255,80,60),100,60); s.uobj(s.asd,lambda a:a.damage,(255,130,60),110,80); s.uex()
+        # Tạo Địch và Thiên thạch ngẫu nhiên nếu chưa đến đoạn đấu Boss
+        if not s.boss.active and s.frame%45==0: s.en.append(Enemy(s.esp))
+        if not s.boss.active and s.frame%90==0: s.asd.append(Asteroid())
+
+    def ui(s): # Vẽ giao diện người dùng (Thanh máu, Điểm)
+        pygame.draw.rect(screen,(20,20,28),(18,18,220,18),border_radius=6) # Nền thanh máu
+        pygame.draw.rect(screen,RED,(18,18,int(220*s.p.hp/s.p.max_hp),18),border_radius=6) # Phần máu còn lại
+        pygame.draw.rect(screen,WHITE,(18,18,220,18),2,border_radius=6) # Viền thanh máu
+        txt(f"HP {s.p.hp}/{s.p.max_hp}",fs,WHITE,24,16)
+        if s.state=="PLAYING": txt(f"SCORE: {s.score} | GOAL: 400",fs,WHITE,15,H-30)
+
+    def draw(s): # Tổng hợp logic vẽ tất cả mọi thứ lên màn hình
+        s.bg.draw() # Vẽ nền
+        if s.state=="START": # Vẽ màn hình bắt đầu
+            txt("HORSEWAR: THE UNKNOWN MYSTERY",fb,RED,W//2,90,1); txt(" * Press ASDW on the keyboard to move * ",fm,CYAN,W//2,160,1); s.p.draw()
+            txt("[ SPACE ] TO TAKE OFF",fm,YELLOW,W//2,H-120,1); pygame.display.flip(); return
+        if s.state=="WON": # Vẽ màn hình chiến thắng
+            iss(W//2,s.winy); [e.draw() for e in s.ex]; s.p.draw()
+            if s.winy>=H//4:
+                txt("YOU WON",fb,YELLOW,W//2,H//2+120,1); txt("MISSION COMPLETE",fm,WHITE,W//2,H//2+170,1); txt("[ SPACE ] TO RETRY",fs,(170,170,170),W//2,H-50,1)
+            s.ui(); pygame.display.flip(); return
+        # Vẽ các thực thể trong game
+        s.boss.draw(); [e.draw() for e in s.en]; [a.draw() for a in s.asd]
+        if s.state!="OVER":
+            [pygame.draw.line(screen,YELLOW,(b[0],b[1]),(b[0],b[1]-25),4) for b in s.bu] # Đạn ta
+            for b in s.bbu: # Đạn Boss
+                pygame.draw.circle(screen,PURPLE,(int(b[0]),int(b[1])),8)
+                pygame.draw.circle(screen,WHITE,(int(b[0]),int(b[1])),8,1)
+            [e.draw() for e in s.ex]; s.p.draw()
+        else: # Vẽ màn hình khi Game Over
+            txt("MISSION FAILED",fb,RED,W//2,H//2-20,1); txt("[SPACE] TO RETRY",fm,WHITE,W//2,H//2+40,1); txt(" PRESS ASDW TO MOVE",fm ,(170,170,170),W//2,H//2+80,1)
+        s.ui(); pygame.display.flip()
+
+# --- TẢI CÁC HIỆU ỨNG ÂM THANH ---
+SND_EXPLOSION=ls(EXPLO,.45)
+SND_GAME_OVER=ls(GOVER,.45)
+SND_SHOOT=ls(SHOOT,.18)
+SND_VICTORY=ls(VICTORY,.55) or ls(r"C:\Users\HAI\Downloads\victory.wav",.35) or ls(EXPLO,.2)
+
+# --- HÀM CHÍNH (MAIN LOOP) ---
+def main():
+    g=Game()
+    while 1:
+        clock.tick(FPS) # Khóa tốc độ game ở 60 FPS
+        for e in pygame.event.get():
+            if e.type==pygame.QUIT: ss(); sm(); pygame.quit(); sys.exit() # Thoát game
+            if e.type==pygame.KEYDOWN: g.kd(e.key) # Sự kiện nhấn phím
+            if e.type==pygame.KEYUP: g.ku(e.key)   # Sự kiện thả phím
+        g.update() # Tính toán logic
+        g.draw()   # Hiển thị đồ họa
+if __name__=="__main__": main() # Chạy chương trình
