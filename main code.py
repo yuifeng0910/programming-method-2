@@ -1,24 +1,19 @@
 #AERO BLASTER: HORSE OF DOOM
 import pygame, random, math, sys, os
 from pygame import SRCALPHA
-
 pygame.mixer.pre_init(44100,-16,2,512)
 pygame.init()
 if not pygame.mixer.get_init(): pygame.mixer.init()
-
 W,H,FPS=700,900,60
 screen=pygame.display.set_mode((W,H))
 pygame.display.set_caption("AERO BLASTER: HORSE OF DOOM")
 clock=pygame.time.Clock()
-
 WHITE=(255,255,255); BLACK=(10,10,10); RED=(255,70,70); YELLOW=(255,220,80)
 CYAN=(100,220,255); PURPLE=(220,100,255); SILVER=(205,210,220); DARK=(120,130,145)
 GREY=(70,78,96); B1=(95,70,55); B2=(130,95,70); B3=(165,125,92)
-
 fs=pygame.font.SysFont("monospace",18,True)
 fm=pygame.font.SysFont("arial",28,True)
 fb=pygame.font.SysFont("arial",44,True)
-
 PLAYER_IMG=r"C:\Users\HAI\Downloads\pl2.png"
 ENEMY_IMG=r"c:\Users\HAI\Downloads\planebl.png"
 BOSS_IMG=r"c:\Users\HAI\Downloads\z7718593466873_0a142d28b5623bef36d76497091803ff.jpg"
@@ -29,7 +24,6 @@ EXPLO=r"c:\Users\HAI\Downloads\explosion.wav.wav"
 GOVER=r"c:\Users\HAI\Downloads\game_over.wav.wav"
 SHOOT=r"C:\Users\HAI\Downloads\shoot.wav"
 VICTORY=r"c:\Users\HAI\Downloads\winning.wav.wav"
-
 def ls(p,v=.5):
     try:
         if p and os.path.exists(p):
