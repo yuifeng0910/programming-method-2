@@ -20,10 +20,10 @@
       + make sure you have all the image and sound files in the right folder (we put the paths in the code)
       + just run the main file and press space to start
   * This is the states diagram for our game, it will help you understand more about how the code work
--
--
--
--
+
+
+![states diagram for programming project](https://github.com/user-attachments/assets/7fc47b1c-d86f-4bd5-a5d1-4a2b1b155ea2)
+
 
   - how we made this code?
   - we used pygame library to made this project. here is our process:
@@ -39,13 +39,11 @@
       + shop system: use score to buy new ships or better guns
       + high score table: to save the best players' names
   * This is the video of running our video game:
-  -
-  -
-  -
-  -
 
 
-  
+https://github.com/user-attachments/assets/c5717839-4895-4f7f-ae92-4efad981a8d9
+
+
 3. CONCLUSION
 making this game was a great experience for our group. we learned how to work together, solve difficult bugs, and use python in a fun way. it was challenging to make the boss fight and the sounds work perfectly, but we are very happy with the result. thank you teacher for helping us during the semester and we hope you ẹnoy our project!
   - some small notes:
