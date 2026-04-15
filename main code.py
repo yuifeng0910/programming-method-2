@@ -147,7 +147,8 @@ class Enemy:
     def rect(s): return pygame.Rect(s.x-35,s.y-45,70,90)
     def update(s): s.y+=s.v
     def draw(s):
-        screen.blit(s.sp,s.sp.get_rect(center=(s.x,s.y)))
+        e=pygame.transform.rotate(s.sp,180)
+        screen.blit(e,e.get_rect(center=(s.x,s.y)))
         pygame.draw.rect(screen,BLACK,(s.x-25,s.y-52,50,5))
         pygame.draw.rect(screen,RED,(s.x-25,s.y-52,int(s.hp/s.max_hp*50),5))
 class Asteroid:
