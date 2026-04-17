@@ -24,6 +24,16 @@ EXPLO=r"c:\Users\HAI\Downloads\explosion.wav.wav"
 GOVER=r"c:\Users\HAI\Downloads\game_over.wav.wav"
 SHOOT=r"C:\Users\HAI\Downloads\shoot.wav"
 VICTORY=r"c:\Users\HAI\Downloads\winning.wav.wav"
+def main():
+    g=Game()
+    while 1:
+        clock.tick(FPS)
+        for e in pygame.event.get():
+            if e.type==pygame.QUIT: ss(); sm(); pygame.quit(); sys.exit()
+            if e.type==pygame.KEYDOWN: g.kd(e.key)
+            if e.type==pygame.KEYUP: g.ku(e.key)
+        g.update(); g.draw()
+if __name__=="__main__": main()
 def ls(p,v=.5):
     try:
         if p and os.path.exists(p):
@@ -314,13 +324,3 @@ SND_EXPLOSION=ls(EXPLO,.45)
 SND_GAME_OVER=ls(GOVER,.45)
 SND_SHOOT=ls(SHOOT,.18)
 SND_VICTORY=ls(VICTORY,.55) or ls(r"C:\Users\HAI\Downloads\victory.wav",.35) or ls(EXPLO,.2)
-def main():
-    g=Game()
-    while 1:
-        clock.tick(FPS)
-        for e in pygame.event.get():
-            if e.type==pygame.QUIT: ss(); sm(); pygame.quit(); sys.exit()
-            if e.type==pygame.KEYDOWN: g.kd(e.key)
-            if e.type==pygame.KEYUP: g.ku(e.key)
-        g.update(); g.draw()
-if __name__=="__main__": main()
